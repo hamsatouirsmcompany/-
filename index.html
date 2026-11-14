@@ -7,7 +7,7 @@
 #hl-root .bgv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 60%;z-index:0;transform:scale(1.04);animation:hlkb 40s ease-in-out infinite alternate}
 @keyframes hlkb{to{transform:scale(1.14) translateY(-1.5%)}}
 #hl-root .shade{position:absolute;inset:0;z-index:1;background:radial-gradient(120% 80% at 50% 30%,#0b1a4544,#0b1a45bb 75%),linear-gradient(180deg,#0b1a45aa,#0b1a4566 35%,#0b1a45e6)}
-#hl-root .in{position:relative;z-index:2;max-width:1040px;margin:0 auto;padding:0 20px}
+#hl-root .in{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:0 20px}
 @media (prefers-reduced-motion:reduce){#hl-root .bgv{animation:none}}
 #hl-root *{box-sizing:border-box}
 #hl-root .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
@@ -64,6 +64,10 @@
 #hl-root .dua span{animation:hldua 4s ease-in-out infinite}
 @keyframes hldua{50%{opacity:.75;transform:scale(1.03)}}
 @media(max-width:560px){#hl-root{padding:20px 0 26px}#hl-root .in{padding:0 12px}#hl-root .live{margin-inline-start:0}}
+#hl-root .gr{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;align-items:start}
+#hl-root .gr .cd{margin-top:0}
+#hl-root .gr .cw .cd{max-height:480px;overflow-y:auto}
+@media(max-width:860px){#hl-root .gr{grid-template-columns:1fr}#hl-root .gr .cw .cd{margin-top:16px;max-height:none}}
 </style>
 
 <div class="in">
@@ -75,6 +79,7 @@
 
 <div class="dua"><span>🤲 يارب ارزق كل مشتاق</span></div>
 
+<div class="gr"><div class="cs">
 <div class="frame"><div class="st" id="hl-st">
  <div class="em" id="hl-em"><b>📺</b>البث المباشر هيبدأ هنا قريبًا</div>
  <div id="hl-ov"><div class="rays"></div><canvas id="hl-cv"></canvas>
@@ -82,6 +87,9 @@
 </div></div>
 
 <div class="tick" id="hl-last">في انتظار السحب…</div>
+
+</div>
+<div class="cw"><div class="cd"><h3>🏆 قائمة الفائزين</h3><div id="hl-list"><p class="hint">لا يوجد فائزون بعد، تابعونا في البث المباشر.</p></div></div></div></div>
 
 <div class="cd" id="hl-admin" style="display:none">
  <h3>🔐 لوحة الأدمن</h3>
@@ -94,7 +102,7 @@
  <p class="hint" id="hl-msg" style="margin-top:10px"></p>
 </div>
 
-<div class="cd"><h3>🏆 قائمة الفائزين</h3><div id="hl-list"><p class="hint">لا يوجد فائزون بعد، تابعونا في البث المباشر.</p></div></div>
+
 
 </div>
 <script>
