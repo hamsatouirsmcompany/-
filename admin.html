@@ -17,6 +17,7 @@ input,select,button{font:inherit;padding:10px 12px;border-radius:10px;border:1px
 button{cursor:pointer;background:#24408e;color:#fff;border:0;font-weight:700}
 button.g{background:#f9c613;color:#14264f}button.x{background:#e11d48;padding:4px 10px}
 .w{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px dashed #dbe3f2}.w .x{margin-inline-start:auto}
+button.big{width:100%;margin-top:12px;font-size:1.2rem;padding:14px}button:disabled{opacity:.45;cursor:not-allowed}.w.n{background:#fff8d6;border-radius:8px}
 #msg{margin-top:8px;font-weight:700}
 </style>
 </head>
@@ -27,11 +28,13 @@ button.g{background:#f9c613;color:#14264f}button.x{background:#e11d48;padding:4p
 <div class="row"><input id="pw" type="password" placeholder="كلمة سر الأدمن"><button id="lb">دخول</button></div></div>
 
 <div id="panel" style="display:none">
-<div class="card"><h2>🎊 إعلان فائز</h2>
-<div class="row"><input id="an" placeholder="اسم الفائز"><select id="ap"><option>عمرة تيسير</option><option>عمرة مجانية</option><option>عمرة نص مجانية</option></select><button class="g" id="ab">إظهار الفائز</button></div></div>
+<div class="card"><h2>📝 إضافة فائز للطابور</h2>
+<div class="row"><input id="an" placeholder="اسم الفائز"><select id="ap"><option>عمرة تيسير</option><option>عمرة مجانية</option><option>عمرة نص مجانية</option></select><button class="g" id="ab">إضافة للطابور</button></div></div>
+<div class="card"><h2>⏭️ الطابور (لسه ما ظهرش)</h2><div id="pend"></div>
+<button class="g big" id="nx" disabled>🎊 الفائز التالي</button></div>
 <div class="card"><h2>📺 رابط البث</h2>
 <div class="row"><input id="au" dir="ltr" placeholder="رابط يوتيوب أو فيسبوك"><button id="as">حفظ</button></div></div>
-<div class="card"><h2>🏆 الفائزون</h2><div id="list"></div><button class="x" id="clr" style="margin-top:10px">مسح الكل</button></div>
+<div class="card"><h2>🏆 الفائزون اللي ظهروا</h2><div id="list"></div><button class="x" id="clr" style="margin-top:10px">مسح الكل</button></div>
 </div>
 <div id="msg"></div>
 </main>
@@ -46,15 +49,24 @@ async function call(body){
  try{return JSON.parse(t)}catch(e){return {ok:false,error:'الرد مش JSON – غالبًا النشر مش Anyone أو محتاج نسخة جديدة: '+t.slice(0,80)}}
  }catch(e){return {ok:false,error:'تعذر الاتصال: '+e.message}}
 }
-async function refresh(){
- const s=await (await fetch(API_URL+'?t='+Date.now())).json();
- $('au').value=s.stream||'';
- const l=$('list');l.textContent='';
- (s.winners||[]).forEach(w=>{const r=document.createElement('div');r.className='w';
-  r.textContent='🏅 '+w.name+' – '+w.prize;
+function draw(box,arr,pending){box.textContent='';
+ if(!arr.length){const e=document.createElement('div');e.style.color='#7a88ad';e.textContent=pending?'مفيش حد في الطابور':'لسه ما ظهرش حد';box.append(e);return}
+ arr.forEach((w,i)=>{const r=document.createElement('div');r.className='w'+(pending&&i===0?' n':'');
+  r.textContent=(pending?(i===0?'⏭️ التالي: ':(i+1)+'. '):'🏅 ')+w.name+' – '+w.prize;
   const x=document.createElement('button');x.className='x';x.textContent='حذف';
   x.onclick=async()=>{await call({action:'deleteWinner',id:w.id});refresh()};
-  r.append(x);l.append(r)});
+  r.append(x);box.append(r)});
+}
+async function refresh(){
+ const s=await call({action:'list'});
+ if(!s.ok){msg('فشل: '+s.error);return}
+ $('au').value=s.stream||'';
+ const ws=s.winners||[];
+ const pend=ws.filter(w=>w.shown===false).reverse(); // الأقدم الأول
+ draw($('pend'),pend,true);
+ draw($('list'),ws.filter(w=>w.shown!==false),false);
+ $('nx').disabled=!pend.length;
+ $('nx').textContent=pend.length?('🎊 الفائز التالي: '+pend[0].name):'🎊 الفائز التالي';
 }
 async function enter(){
  try{const r=await call({action:'check'});
@@ -67,7 +79,13 @@ $('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()});
 $('ab').onclick=async()=>{
  const n=$('an').value.trim();if(!n)return;
  const r=await call({action:'addWinner',name:n,prize:$('ap').value});
- if(r.ok){$('an').value='';msg('تم إظهار الفائز ✅',true);refresh()}else msg('فشل: '+r.error);
+ if(r.ok){$('an').value='';msg('تمت الإضافة للطابور ✅',true);refresh()}else msg('فشل: '+r.error);
+};
+$('nx').onclick=async()=>{
+ $('nx').disabled=true;
+ const r=await call({action:'revealNext'});
+ if(r.ok)msg('تم إظهار الفائز ✅',true);else msg(r.error==='no_pending'?'مفيش حد في الطابور':'فشل: '+r.error);
+ refresh();
 };
 $('an').addEventListener('keydown',e=>{if(e.key==='Enter')$('ab').click()});
 $('as').onclick=async()=>{const r=await call({action:'setStream',url:$('au').value});msg(r.ok?'تم حفظ البث ✅':'فشل: '+r.error,r.ok)};
