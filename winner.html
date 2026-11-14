@@ -11,9 +11,15 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--navy);color:#fff;font-family:Cairo,Tahoma,sans-serif;overflow:hidden}
 .bg{position:fixed;inset:0;z-index:0}
-.bg video{width:100%;height:100%;object-fit:cover;object-position:50% 60%;transform:scale(1.05);animation:kb 40s ease-in-out infinite alternate}
-@keyframes kb{to{transform:scale(1.14) translateY(-1.5%)}}
-.bg:after{content:"";position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 45%,#1b3a8c66,#0b1a45d9 70%,#050c26f2),repeating-conic-gradient(from 0deg at 50% 46%,#f9c6130d 0 5deg,transparent 5deg 15deg)}
+#sl{position:absolute;inset:0;overflow:hidden;background:#0b1a45}
+#sl i{position:absolute;inset:0;background-size:cover;background-position:50% 50%;opacity:0;will-change:transform,opacity;animation:sfade 30s linear infinite}
+#sl i:nth-child(1){background-image:url(bg1.jpg);background-position:50% 58%;transform-origin:50% 62%;animation:sfade 30s linear infinite,zin 30s linear infinite}
+#sl i:nth-child(2){background-image:url(bg2.jpg);transform-origin:42% 50%;animation:sfade 30s 10s linear infinite,zout 30s 10s linear infinite}
+#sl i:nth-child(3){background-image:url(bg3.jpg);background-position:50% 40%;transform-origin:50% 45%;animation:sfade 30s 20s linear infinite,zin 30s 20s linear infinite}
+@keyframes sfade{0%{opacity:0}5%{opacity:1}33.3%{opacity:1}38.3%{opacity:0}100%{opacity:0}}
+@keyframes zin{0%{transform:scale(1.02)}38.3%{transform:scale(1.22)}100%{transform:scale(1.22)}}
+@keyframes zout{0%{transform:scale(1.22)}38.3%{transform:scale(1.02)}100%{transform:scale(1.02)}}
+.bg:after{content:"";position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 45%,#1b3a8c40,#0b1a45a6 70%,#050c26e6),repeating-conic-gradient(from 0deg at 50% 46%,#f9c6130d 0 5deg,transparent 5deg 15deg)}
 #cv{position:fixed;inset:0;width:100%;height:100%;z-index:6;pointer-events:none}
 main{position:relative;z-index:2;height:100%;display:grid;place-items:center;padding:2vh 2vw 11vh}
 
@@ -73,11 +79,11 @@ main{position:relative;z-index:2;height:100%;display:grid;place-items:center;pad
 .fs{position:fixed;z-index:7;top:14px;inset-inline-start:14px;font:inherit;font-size:.9rem;cursor:pointer;color:#fff;background:#ffffff1f;border:1px solid #ffffff44;border-radius:99px;padding:8px 16px;transition:opacity .6s}
 .fs:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .fs.hide{opacity:0}.fs.hide:hover,.fs.hide:focus-visible{opacity:1}
-@media (prefers-reduced-motion:reduce){.bg video,.nm{animation:none!important}[data-s=go] *{animation-duration:.01s!important;animation-delay:0s!important}}
+@media (prefers-reduced-motion:reduce){.nm{animation:none!important}#sl i{animation:none!important}#sl i:first-child{opacity:1!important}[data-s=go] *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
 </head>
 <body>
-<div class="bg"><video autoplay muted loop playsinline preload="auto" poster="https://hamsatouirsmcompany.github.io/-/bg.jpg" aria-hidden="true"><source src="https://hamsatouirsmcompany.github.io/-/bg.mp4" type="video/mp4"></video></div>
+<div class="bg"><div id="sl" aria-hidden="true"><i></i><i></i><i></i></div></div>
 <canvas id="cv"></canvas>
 <button class="fs" id="fs" type="button">ملء الشاشة وتفعيل الصوت</button>
 
