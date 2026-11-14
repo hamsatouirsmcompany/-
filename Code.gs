@@ -1,7 +1,10 @@
 /**
  * Hamsa Tourism – Live lottery backend (Google Apps Script)
  * 1) Project Settings > Script Properties > add:  ADMIN_PASSWORD = (your password)
- * 2) Deploy > New deployment > Web app > Execute as: Me, Who has access: Anyone
+ * 2) Deploy > Manage deployments > Edit (pencil) > Version: New version > Deploy
+ *
+ * فقرات الحفل: كل فقرة {id, type: text|draw|end, title, text}
+ * current = رقم الفقرة المعروضة دلوقتي (0 = شاشة الانتظار)
  */
 function doGet() { return out_(getState_()); }
 
@@ -11,28 +14,54 @@ function doPost(e) {
   var pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
   if (!pass || String(b.password) !== pass) return out_({ ok: false, error: 'unauthorized' });
   if (b.action === 'check') return out_({ ok: true });
+  if (b.action === 'list') return out_(Object.assign({ ok: true }, load_()));
 
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     var s = load_();
-    if (b.action === 'addWinner') {
+    var a = b.action, id = Number(b.id);
+    if (a === 'addWinner') {
       var name = String(b.name || '').trim().slice(0, 80);
       var prize = String(b.prize || '').trim().slice(0, 40);
       if (!name || !prize) return out_({ ok: false, error: 'missing' });
       s.seq = (s.seq || 0) + 1;
       s.winners.unshift({ id: s.seq, name: name, prize: prize, ts: Date.now() });
       s.winners = s.winners.slice(0, 200);
-      s.waiting = false; // الفائز الجديد بيشيل رسالة "يا ترى مين الفائز الجاي"
-    } else if (b.action === 'nextWinner') {
-      s.waiting = true;  // الشاشة تعرض "يا ترى مين الفائز الجاي؟"
-    } else if (b.action === 'deleteWinner') {
-      s.winners = s.winners.filter(function (w) { return w.id !== b.id; });
-    } else if (b.action === 'setStream') {
-      s.stream = String(b.url || '').trim().slice(0, 500);
-    } else if (b.action === 'clearWinners') {
-      s.winners = [];
       s.waiting = false;
+    } else if (a === 'nextWinner') {
+      s.waiting = true;
+    } else if (a === 'deleteWinner') {
+      s.winners = s.winners.filter(function (w) { return w.id !== b.id; });
+    } else if (a === 'setStream') {
+      s.stream = String(b.url || '').trim().slice(0, 500);
+    } else if (a === 'clearWinners') {
+      s.winners = []; s.waiting = false;
+    } else if (a === 'addSegment' || a === 'updateSegment') {
+      var title = String(b.title || '').trim().slice(0, 120);
+      var text = String(b.text || '').trim().slice(0, 600);
+      var type = String(b.type || 'text');
+      if (['text', 'draw', 'end'].indexOf(type) < 0) type = 'text';
+      if (!title) return out_({ ok: false, error: 'missing' });
+      if (a === 'addSegment') {
+        s.segSeq = (s.segSeq || 0) + 1;
+        s.segments.push({ id: s.segSeq, type: type, title: title, text: text });
+      } else {
+        var g = find_(s, id);
+        if (!g) return out_({ ok: false, error: 'not_found' });
+        g.title = title; g.text = text; g.type = type;
+      }
+    } else if (a === 'deleteSegment') {
+      s.segments = s.segments.filter(function (g) { return g.id !== id; });
+      if (s.current === id) s.current = 0;
+    } else if (a === 'moveSegment') {
+      var i = idx_(s, id), j = i + (Number(b.dir) < 0 ? -1 : 1);
+      if (i < 0 || j < 0 || j >= s.segments.length) return out_({ ok: false, error: 'cannot_move' });
+      var t = s.segments[i]; s.segments[i] = s.segments[j]; s.segments[j] = t;
+    } else if (a === 'setCurrent') {
+      if (id && !find_(s, id)) return out_({ ok: false, error: 'not_found' });
+      s.current = id || 0;
+      if (id) s.waiting = false;
     } else {
       return out_({ ok: false, error: 'unknown_action' });
     }
@@ -41,11 +70,26 @@ function doPost(e) {
   } finally { lock.releaseLock(); }
 }
 
+function idx_(s, id) { for (var i = 0; i < s.segments.length; i++) if (s.segments[i].id === id) return i; return -1; }
+function find_(s, id) { var i = idx_(s, id); return i < 0 ? null : s.segments[i]; }
+
+function norm_(s) {
+  s.winners = s.winners || []; s.stream = s.stream || ''; s.seq = s.seq || 0; s.waiting = !!s.waiting;
+  if (!s.segments) {
+    s.segments = [
+      { id: 1, type: 'text', title: 'تلاوة من القرآن الكريم', text: '' },
+      { id: 2, type: 'text', title: 'كلمة رئيس مجلس الإدارة', text: '' },
+      { id: 3, type: 'draw', title: 'فريق القرعة', text: '' },
+      { id: 4, type: 'end', title: 'شكرًا لكم', text: 'ما كل مشتاقٍ يصل.. لكن الله يختار من يشاء لضيافته،\nفهنيئًا لمن نادته مكة، وجعلنا الله جميعًا من زوّار بيته الحرام.' }
+    ];
+    s.segSeq = 4; s.current = 0;
+  }
+  s.segSeq = s.segSeq || 0; s.current = s.current || 0;
+  return s;
+}
 function load_() {
   var raw = PropertiesService.getScriptProperties().getProperty('DATA');
-  var s = raw ? JSON.parse(raw) : {};
-  s.winners = s.winners || []; s.stream = s.stream || ''; s.seq = s.seq || 0; s.waiting = !!s.waiting;
-  return s;
+  return norm_(raw ? JSON.parse(raw) : {});
 }
 function save_(s) {
   var raw = JSON.stringify(s);
@@ -55,9 +99,14 @@ function save_(s) {
 function getState_() {
   var raw = CacheService.getScriptCache().get('DATA');
   var s;
-  if (raw) s = JSON.parse(raw);
+  if (raw) s = norm_(JSON.parse(raw));
   else { s = load_(); CacheService.getScriptCache().put('DATA', JSON.stringify(s), 21600); }
-  return { stream: s.stream, winners: s.winners, waiting: !!s.waiting };
+  var g = s.current ? find_(s, s.current) : null;
+  return {
+    stream: s.stream, winners: s.winners, waiting: s.waiting,
+    program: s.segments.length > 0,
+    segment: g ? { id: g.id, type: g.type, title: g.title, text: g.text } : null
+  };
 }
 function out_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
