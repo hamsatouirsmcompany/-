@@ -99,7 +99,7 @@
 </div>
 <script>
 (function(){
-const API="PUT_YOUR_APPS_SCRIPT_URL_HERE"; // رابط الـ /exec
+const API="https://script.google.com/macros/s/AKfycbySiSBI_xSOSVwBG1ZhY7FCXGeRFDsVa473c5x7yYR2grj3eiomZR-unXahVv0gZeeCNQ/exec"; // رابط الـ /exec
 const PR={"عمرة تيسير":"t1","عمرة مجانية":"","عمرة نص مجانية":"t3"};
 const $=i=>document.getElementById('hl-'+i);
 $('ologo').src=document.querySelector('#hl-root .lg img').src;
@@ -150,7 +150,7 @@ async function poll(){try{
  const ids=new Set((s.winners||[]).map(w=>w.id));
  if(seen===null)seen=ids;
  else{(s.winners||[]).slice().reverse().forEach(w=>{if(!seen.has(w.id)){seen.add(w.id);q.push(w)}});next()}
-}catch(e){}}
+}catch(e){console.error("poll failed",e)}}
 
 /* admin: يظهر فقط لما الرابط فيه #admin */
 function syncAdmin(){$('admin').style.display=(location.hash==='#admin')?'block':'none';}
