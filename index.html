@@ -58,6 +58,11 @@
 @keyframes hlsh{to{background-position:-300% 0}}
 #hl-root .pz{display:inline-block;padding:8px 30px;border-radius:99px;font-weight:900;font-size:clamp(1rem,3.6vw,1.9rem);color:#14264f;background:linear-gradient(135deg,var(--gold),var(--gold2));box-shadow:0 0 0 4px #f9c61333,0 10px 30px #f9c61355;animation:hlpl 1.8s ease-in-out infinite}
 @keyframes hlpl{50%{transform:scale(1.05)}}
+#hl-root .dua{text-align:center;margin:2px 0 16px;font-family:'Reem Kufi',Cairo,sans-serif;font-weight:700;font-size:clamp(1.3rem,4.6vw,2.4rem);color:var(--gold2);text-shadow:0 2px 18px #f9c61366,0 2px 6px #000a;display:flex;align-items:center;justify-content:center;gap:14px}
+#hl-root .dua:before,#hl-root .dua:after{content:"";height:2px;width:clamp(30px,10vw,120px);background:linear-gradient(90deg,transparent,var(--gold))}
+#hl-root .dua:after{transform:scaleX(-1)}
+#hl-root .dua span{animation:hldua 4s ease-in-out infinite}
+@keyframes hldua{50%{opacity:.75;transform:scale(1.03)}}
 @media(max-width:560px){#hl-root{padding:20px 0 26px}#hl-root .in{padding:0 12px}#hl-root .live{margin-inline-start:0}}
 </style>
 
@@ -67,6 +72,8 @@
  <div class="tt"><h2>سحب العمرة الكبير</h2><p>بث مباشر مع الإعلان عن الفائزين لحظة بلحظة</p></div>
  <div class="live"><i></i>بث مباشر</div>
 </div>
+
+<div class="dua"><span>🤲 يارب ارزق كل مشتاق</span></div>
 
 <div class="frame"><div class="st" id="hl-st">
  <div class="em" id="hl-em"><b>📺</b>البث المباشر هيبدأ هنا قريبًا</div>
