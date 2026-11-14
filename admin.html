@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>لوحة الأدمن – همسة</title>
+<style>
+body{margin:0;background:#f4f7fc;color:#14264f;font-family:Tahoma,Arial,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:#fff;border-bottom:4px solid #f9c613}
+header img{height:52px}h1{font-size:1.1rem;margin:0}
+main{max-width:640px;margin:16px auto;padding:0 14px}
+.card{background:#fff;border:1px solid #dbe3f2;border-radius:14px;padding:14px;margin-top:14px}
+h2{margin:0 0 10px;font-size:1rem}
+input,select,button{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid #dbe3f2}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>input{flex:1;min-width:150px}
+button{cursor:pointer;background:#24408e;color:#fff;border:0;font-weight:700}
+button.g{background:#f9c613;color:#14264f}button.x{background:#e11d48;padding:4px 10px}
+.w{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px dashed #dbe3f2}.w .x{margin-inline-start:auto}
+#msg{margin-top:8px;font-weight:700}
+</style>
+</head>
+<body>
+<header><img src="logo.png" alt=""><h1>لوحة الأدمن</h1></header>
+<main>
+<div class="card" id="login"><h2>🔐 كلمة السر</h2>
+<div class="row"><input id="pw" type="password" placeholder="كلمة سر الأدمن"><button id="lb">دخول</button></div></div>
+
+<div id="panel" style="display:none">
+<div class="card"><h2>🎊 إعلان فائز</h2>
+<div class="row"><input id="an" placeholder="اسم الفائز"><select id="ap"><option>عمرة تيسير</option><option>عمرة مجانية</option><option>عمرة نص مجانية</option></select><button class="g" id="ab">إظهار الفائز</button></div></div>
+<div class="card"><h2>📺 رابط البث</h2>
+<div class="row"><input id="au" dir="ltr" placeholder="رابط يوتيوب أو فيسبوك"><button id="as">حفظ</button></div></div>
+<div class="card"><h2>🏆 الفائزون</h2><div id="list"></div><button class="x" id="clr" style="margin-top:10px">مسح الكل</button></div>
+</div>
+<div id="msg"></div>
+</main>
+<script src="config.js"></script>
+<script>
+const $=i=>document.getElementById(i);
+let PW=sessionStorage.getItem('pw')||'';
+function msg(t,ok){$('msg').textContent=t;$('msg').style.color=ok?'#15803d':'#e11d48';}
+async function call(body){
+ const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({password:PW},body))});
+ return r.json();
+}
+async function refresh(){
+ const s=await (await fetch(API_URL+'?t='+Date.now())).json();
+ $('au').value=s.stream||'';
+ const l=$('list');l.textContent='';
+ (s.winners||[]).forEach(w=>{const r=document.createElement('div');r.className='w';
+  r.textContent='🏅 '+w.name+' – '+w.prize;
+  const x=document.createElement('button');x.className='x';x.textContent='حذف';
+  x.onclick=async()=>{await call({action:'deleteWinner',id:w.id});refresh()};
+  r.append(x);l.append(r)});
+}
+async function enter(){
+ try{const r=await call({action:'check'});
+  if(r.ok){sessionStorage.setItem('pw',PW);$('login').style.display='none';$('panel').style.display='block';msg('');refresh()}
+  else msg('كلمة السر غلط');
+ }catch(e){msg('تعذر الاتصال بالسيرفر – راجع API_URL في config.js')}
+}
+$('lb').onclick=()=>{PW=$('pw').value;enter()};
+$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()});
+$('ab').onclick=async()=>{
+ const n=$('an').value.trim();if(!n)return;
+ const r=await call({action:'addWinner',name:n,prize:$('ap').value});
+ if(r.ok){$('an').value='';msg('تم إظهار الفائز ✅',true);refresh()}else msg('فشل: '+r.error);
+};
+$('an').addEventListener('keydown',e=>{if(e.key==='Enter')$('ab').click()});
+$('as').onclick=async()=>{const r=await call({action:'setStream',url:$('au').value});msg(r.ok?'تم حفظ البث ✅':'فشل: '+r.error,r.ok)};
+$('clr').onclick=async()=>{if(confirm('مسح كل الفائزين؟')){await call({action:'clearWinners'});refresh()}};
+if(PW)enter();
+</script>
+</body>
+</html>
