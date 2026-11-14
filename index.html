@@ -117,7 +117,7 @@ function setStream(u){if(u===cur)return;cur=u;
  $('em').style.display='none';
  const f=document.createElement('iframe');f.src=embed(u);f.allow='autoplay; fullscreen; picture-in-picture';f.allowFullscreen=true;
  $('st').insertBefore(f,$('ov'));}
-function call(b){return fetch(API,{method:'POST',body:JSON.stringify(Object.assign({password:PW},b))}).then(r=>r.json())}
+async function call(b){try{const r=await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({password:PW},b))});const t=await r.text();try{return JSON.parse(t)}catch(e){return {ok:false,error:'الرد مش JSON – غالبًا النشر مش Anyone أو محتاج نسخة جديدة: '+t.slice(0,80)}}}catch(e){return {ok:false,error:'تعذر الاتصال: '+e.message}}}
 function msg(t,ok){$('msg').textContent=t;$('msg').style.color=ok?'#15803d':'#e11d48'}
 function render(ws){last=ws;const l=$('list');l.textContent='';
  const lt=$('last');
@@ -156,7 +156,7 @@ async function poll(){try{
 function syncAdmin(){$('admin').style.display=(location.hash==='#admin')?'block':'none';}
 async function enter(){try{const r=await call({action:'check'});
  if(r.ok){authed=true;sessionStorage.setItem('hlpw',PW);$('login').style.display='none';$('panel').style.display='block';msg('');render(last);poll()}
- else msg('كلمة السر غلط')}catch(e){msg('تعذر الاتصال بالسيرفر')}}
+ else msg(r.error==='unauthorized'?'كلمة السر غلط':'فشل: '+r.error)}catch(e){msg('تعذر الاتصال بالسيرفر')}}
 $('lb').onclick=()=>{PW=$('pw').value;enter()};
 $('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()});
 $('ab').onclick=async()=>{const n=$('an').value.trim();if(!n)return;
