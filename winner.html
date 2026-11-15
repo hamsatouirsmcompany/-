@@ -99,6 +99,17 @@ body.vid #seg{padding:13vh 3vw 6vh}
 body.vid .sg{max-width:min(94vw,1300px);padding:3vh 3vw}
 body.vid .sg h2{font-size:clamp(26px,min(4.6vw,7.5vh),70px)}
 body.vid .sg p{font-size:clamp(16px,min(2.6vw,4.2vh),38px);margin-top:2vh}
+.gl{display:none}
+body.gal .gl{display:grid;grid-template-columns:repeat(var(--c,1),minmax(0,1fr));grid-template-rows:repeat(var(--r,1),minmax(0,1fr));gap:1.6vh 1.2vw;height:62vh;margin-top:2.4vh;font-size:var(--nf,2.6vh)}
+body.gal #seg{padding:13vh 3vw 5vh}
+body.gal .sg{width:min(96vw,1500px);max-width:none;padding:3vh 2.5vw}
+body.gal .sg h2{font-size:clamp(26px,min(4.6vw,7.5vh),70px)}
+body.gal .sg p{font-size:clamp(16px,min(2.4vw,3.8vh),34px);margin-top:1.4vh}
+.gc{display:flex;flex-direction:column;align-items:center;gap:.5vh;min-width:0;min-height:0;width:100%;max-width:46vh;justify-self:center;animation:fi .8s both}
+.gp{flex:1;min-height:0;width:100%;border-radius:18px;border:3px solid var(--gold);overflow:hidden;background:#ffffff14;display:grid;place-items:center;font-size:2.2em;box-shadow:0 6px 24px #0009}
+.gp img{width:100%;height:100%;object-fit:cover;display:block}
+.gc b{max-width:100%;color:#fff;line-height:1.25;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gc small{font-size:.68em;color:var(--gold2);font-weight:600}
 @keyframes sgin{from{opacity:0;transform:scale(.9) translateY(4vh);filter:blur(10px)}}
 
 /* اللوجوهات: أعلى اليمين */
@@ -288,7 +299,7 @@ body.vid .sg p{font-size:clamp(16px,min(2.6vw,4.2vh),38px);margin-top:2vh}
  <g stroke="#f4f6fb" stroke-width=".9"><path d="M-12 -11.2V-7.2M-3 -11.2V-7.2M6 -11.2V-7.2"/></g>
  <circle cx="-13" cy="-1.6" r="2.6" fill="#15161c"/><circle cx="-13" cy="-1.6" r="1" fill="#9aa1b3"/><circle cx="11" cy="-1.6" r="2.6" fill="#15161c"/><circle cx="11" cy="-1.6" r="1" fill="#9aa1b3"/></g><animateMotion dur="12s" begin="-6s" repeatCount="indefinite" path="M870 149H545" calcMode="linear"/></g>
 </svg></div>
-<div id="seg"><div class="sg" id="sg"><h2 id="sgt"></h2><div class="rl"><i></i></div><img id="sgi" alt=""><div class="vf" id="vf"></div><p id="sgx"></p><div class="sgn" id="sgn"></div></div></div>
+<div id="seg"><div class="sg" id="sg"><h2 id="sgt"></h2><div class="rl"><i></i></div><img id="sgi" alt=""><div class="vf" id="vf"></div><div class="gl" id="gl"></div><p id="sgx"></p><div class="sgn" id="sgn"></div></div></div>
 <div class="prev" id="prev"></div>
 
 <script>
@@ -325,18 +336,30 @@ function videoEl(u){u=String(u||'').trim();if(!u)return null;let m,src='';
  else if(/drive\.google\.com/.test(u)&&(m=u.match(/\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/)))src='https://drive.google.com/file/d/'+m[1]+'/preview';
  if(src){const f=document.createElement('iframe');f.src=src;f.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';f.allowFullscreen=true;return f}
  const v=document.createElement('video');v.src=u;v.controls=true;v.autoplay=true;v.playsInline=true;return v}
+function gallery(ws){const b=$('gl'),a=ws.slice().reverse(),n=a.length;
+ const k=a.map(w=>[w.id,w.name,w.prize,w.photo||''].join('~')).join('|');if(b.dataset.k===k)return;b.dataset.k=k;
+ b.textContent='';if(!n)return;
+ const c=Math.min(n,Math.ceil(Math.sqrt(n*2.4))),r=Math.ceil(n/c);
+ b.style.setProperty('--c',c);b.style.setProperty('--r',r);
+ b.style.setProperty('--nf',(r<=1?3.2:r<=2?2.7:r<=3?2.2:r<=4?1.8:1.5)+'vh');
+ a.forEach(w=>{const d=document.createElement('div');d.className='gc';
+  const p=document.createElement('div');p.className='gp';
+  if(w.photo){const im=document.createElement('img');im.alt='';im.onerror=()=>{im.remove();p.textContent='🏅'};im.src=imgUrl(w.photo);p.append(im)}else p.textContent='🏅';
+  const nm=document.createElement('b');nm.textContent=w.name;d.append(p,nm);
+  if(w.prize){const s=document.createElement('small');s.textContent=w.prize;d.append(s)}
+  b.append(d)})}
 function modeOf(s){const g=s.segment;return !s.program?'draw':(!g?'pre':(g.type==='draw'?'draw':'text'))}
 function setMode(s){const m=modeOf(s),g=s.segment;
  const k=m==='text'?[g.id,g.type,g.title,g.text,g.img].join('|'):m;
  if(k===segKey)return m;
  segKey=k;mode=m;$('vf').textContent='';
  document.body.classList.toggle('txt',m==='text');
- if(m==='text'){document.body.classList.toggle('end',g.type==='end');document.body.classList.toggle('pic',g.type==='photo');document.body.classList.toggle('vid',g.type==='video');
+ if(m==='text'){document.body.classList.toggle('end',g.type==='end');document.body.classList.toggle('pic',g.type==='photo');document.body.classList.toggle('vid',g.type==='video');document.body.classList.toggle('gal',g.type==='gallery');
   const im=$('sgi');if(g.type==='photo'&&g.img){im.onerror=()=>{im.style.display='none'};im.style.display='';im.src=imgUrl(g.img)}else{im.removeAttribute('src');im.style.display='none'}
-  $('sgn').dataset.k='';$('sgt').textContent=g.title;const x=$('sgx');x.textContent=g.text||'';x.style.display=g.text?'':'none';
+  $('sgn').dataset.k='';$('gl').dataset.k='';$('sgt').textContent=g.title;const x=$('sgx');x.textContent=g.text||'';x.style.display=g.text?'':'none';
   const c=$('sg');c.style.animation='none';void c.offsetWidth;c.style.animation='';
   if(g.type==='video'){const v=videoEl(g.img);if(v)$('vf').append(v);else $('vf').style.display='none'}else $('vf').style.display='';
-  if(g.type==='end'){confetti();chime()}else if(g.type==='photo'){confetti()}}
+  if(g.type==='end'){confetti();chime()}else if(g.type==='photo'||g.type==='gallery'){confetti()}}
  else idle();
  return m}
 function prev(ws){const p=$('prev');p.textContent='';
@@ -355,6 +378,7 @@ async function poll(){try{
   process();
   if(s.waiting&&!busy&&!q.length&&!isWait)setWait()}
  if(m==='text'&&s.segment.type==='photo')names(ws);
+ if(m==='text'&&s.segment.type==='gallery')gallery(ws);
  prev(ws)}catch(e){console.error('poll failed',e)}}
 
 function confetti(){const c=$('cv'),g=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;

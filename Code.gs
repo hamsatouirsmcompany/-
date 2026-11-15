@@ -26,9 +26,15 @@ function doPost(e) {
       var prize = String(b.prize || '').trim().slice(0, 40);
       if (!name || !prize) return out_({ ok: false, error: 'missing' });
       s.seq = (s.seq || 0) + 1;
-      s.winners.unshift({ id: s.seq, name: name, prize: prize, ts: Date.now() });
+      var photo = String(b.photo || '').trim().slice(0, 600);
+      s.winners.unshift({ id: s.seq, name: name, prize: prize, photo: photo, ts: Date.now() });
       s.winners = s.winners.slice(0, 200);
       s.waiting = false;
+    } else if (a === 'setWinnerPhoto') {
+      var wi = null;
+      for (var q = 0; q < s.winners.length; q++) if (s.winners[q].id === b.id) wi = s.winners[q];
+      if (!wi) return out_({ ok: false, error: 'not_found' });
+      wi.photo = String(b.photo || '').trim().slice(0, 600);
     } else if (a === 'nextWinner') {
       s.waiting = true;
     } else if (a === 'deleteWinner') {
@@ -42,7 +48,7 @@ function doPost(e) {
       var text = String(b.text || '').trim().slice(0, 600);
       var type = String(b.type || 'text');
       var img = String(b.img || '').trim().slice(0, 600);
-      if (['text', 'draw', 'end', 'photo', 'video'].indexOf(type) < 0) type = 'text';
+      if (['text', 'draw', 'end', 'photo', 'video', 'gallery'].indexOf(type) < 0) type = 'text';
       if (!title) return out_({ ok: false, error: 'missing' });
       if (a === 'addSegment') {
         s.segSeq = (s.segSeq || 0) + 1;
@@ -106,6 +112,19 @@ function norm_(s) {
     else if (ei >= 0) s.segments.splice(ei, 0, vseg);
     else s.segments.push(vseg);
     s.segSeq = s.segSeq + 1; s.videoSeeded = true;
+  }
+  // إضافة فقرة "صور الفائزين" مرة واحدة بعد الفيديو (أو قبل الختام)
+  if (!s.gallerySeeded) {
+    var vi = -1, ge = -1;
+    for (var m = 0; m < s.segments.length; m++) {
+      if (s.segments[m].type === 'video') vi = m;
+      if (s.segments[m].type === 'end') ge = m;
+    }
+    var gseg = { id: s.segSeq + 1, type: 'gallery', title: 'الفائزون', text: 'مبروك لكل الفائزين', img: '' };
+    if (vi >= 0) s.segments.splice(vi + 1, 0, gseg);
+    else if (ge >= 0) s.segments.splice(ge, 0, gseg);
+    else s.segments.push(gseg);
+    s.segSeq = s.segSeq + 1; s.gallerySeeded = true;
   }
   return s;
 }

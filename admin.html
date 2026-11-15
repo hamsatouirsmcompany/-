@@ -40,13 +40,13 @@ button.sm{padding:5px 10px}button.big{width:100%;font-size:1.15rem;padding:14px}
 <div class="nav"><button id="pv">⏮ السابقة</button><button class="g" id="nxs">الفقرة التالية ⏭</button><button class="x" id="stp" style="padding:10px 12px">⏹ شاشة الانتظار</button></div>
 <div id="segs"></div>
 <h2 style="margin-top:16px" id="fh">➕ إضافة فقرة</h2>
-<div class="row"><select id="st"><option value="text">📝 نص (عنوان + نص)</option><option value="draw">🎰 قرعة (شاشة الفائزين)</option><option value="photo">📸 صورة (جماعية مع مجلس الإدارة)</option><option value="video">🎬 فيديو</option><option value="end">🏁 ختام (جملة + قصاصات)</option></select><input id="sti" placeholder="عنوان الفقرة (مثال: كلمة رئيس مجلس الإدارة)"></div>
+<div class="row"><select id="st"><option value="text">📝 نص (عنوان + نص)</option><option value="draw">🎰 قرعة (شاشة الفائزين)</option><option value="photo">📸 صورة (جماعية مع مجلس الإدارة)</option><option value="video">🎬 فيديو</option><option value="gallery">🖼️ صور الفائزين (صور + أسماء)</option><option value="end">🏁 ختام (جملة + قصاصات)</option></select><input id="sti" placeholder="عنوان الفقرة (مثال: كلمة رئيس مجلس الإدارة)"></div>
 <div id="sib" style="display:none"><input id="si" dir="ltr" placeholder="اسم ملف الصورة (مثال: group.jpg) أو رابط صورة / رابط Google Drive" style="width:100%;box-sizing:border-box;margin-top:8px"><div class="hint" id="sih" style="margin-top:6px"></div></div>
 <textarea id="stx" rows="3" placeholder="نص يظهر تحت العنوان (اختياري) — آية، جملة الختام، اسم المتحدث..."></textarea>
 <div class="row" style="margin-top:8px"><button class="g" id="sb">إضافة الفقرة</button><button id="sc" style="display:none;background:#8a96b8">إلغاء التعديل</button></div></div>
 
 <div class="card"><h2>🎊 إعلان فائز</h2>
-<div class="row"><input id="an" placeholder="اسم الفائز"><select id="ap"><option>عمرة تيسير</option><option>عمرة مجانية</option><option>عمرة نص مجانية</option></select><button class="g" id="ab">إظهار الفائز</button></div></div>
+<div class="row"><input id="an" placeholder="اسم الفائز"><input id="aph" dir="ltr" placeholder="صورة الفائز (اسم ملف أو رابط) – اختياري"><select id="ap"><option>عمرة تيسير</option><option>عمرة مجانية</option><option>عمرة نص مجانية</option></select><button class="g" id="ab">إظهار الفائز</button></div></div>
 <div class="card"><h2>⏭️ الفائز التالي</h2>
 <div class="hint">بيعرض على الشاشة رسالة "يا ترى مين الفائز الجاي؟" لحد ما تضيف الفائز اللي بعده (في فقرة القرعة).</div>
 <button class="g big" id="nx">❓ يا ترى مين الفائز الجاي؟</button><div id="ws" style="margin-top:8px;font-weight:700"></div></div>
@@ -61,8 +61,8 @@ button.sm{padding:5px 10px}button.big{width:100%;font-size:1.15rem;padding:14px}
 const $=i=>document.getElementById(i);
 let PW=sessionStorage.getItem('pw')||'';
 let SEG=[],CUR=0,EDIT=0;
-const TYPES={text:'📝 نص',draw:'🎰 قرعة',photo:'📸 صورة',video:'🎬 فيديو',end:'🏁 ختام'};
-const HINTS={photo:['اسم ملف الصورة (مثال: group.jpg) أو رابط صورة / رابط Google Drive','ارفع الصورة جنب ملفات الموقع واكتب اسمها هنا، أو حط رابط من Google Drive (المشاركة: أي شخص معاه الرابط). النص اللي تحت بيظهر كتعليق.'],video:['رابط يوتيوب / فيسبوك / Google Drive، أو اسم ملف فيديو (مثال: clip.mp4)','يوتيوب وفيسبوك: الصق رابط الفيديو. Google Drive: المشاركة لأي شخص معاه الرابط. ملف مرفوع جنب الموقع: اكتب اسمه (mp4 أفضل). النص اللي تحت بيظهر كتعليق.']};
+const TYPES={text:'📝 نص',draw:'🎰 قرعة',photo:'📸 صورة',video:'🎬 فيديو',gallery:'🖼️ صور الفائزين',end:'🏁 ختام'};
+const HINTS={gallery:['','بتعرض كل الفائزين بصورهم وأسمائهم. الصورة بتتحط لكل فائز من قايمة "🏆 الفائزون" تحت (زرار 📷) أو وقت إضافة الفائز. اللي من غير صورة بيظهر باسمه بس. النص اللي تحت بيظهر كتعليق.'],photo:['اسم ملف الصورة (مثال: group.jpg) أو رابط صورة / رابط Google Drive','ارفع الصورة جنب ملفات الموقع واكتب اسمها هنا، أو حط رابط من Google Drive (المشاركة: أي شخص معاه الرابط). النص اللي تحت بيظهر كتعليق.'],video:['رابط يوتيوب / فيسبوك / Google Drive، أو اسم ملف فيديو (مثال: clip.mp4)','يوتيوب وفيسبوك: الصق رابط الفيديو. Google Drive: المشاركة لأي شخص معاه الرابط. ملف مرفوع جنب الموقع: اكتب اسمه (mp4 أفضل). النص اللي تحت بيظهر كتعليق.']};
 function msg(t,ok){$('msg').textContent=t;$('msg').style.color=ok?'#15803d':'#e11d48';}
 async function call(body){
  try{const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({password:PW},body))});
@@ -94,7 +94,7 @@ function step(d){
  const i=SEG.findIndex(g=>g.id===CUR);let n=i<0?(d>0?0:-1):i+d;
  if(n<0||n>=SEG.length){msg('مفيش فقرة '+(d>0?'بعد':'قبل')+' كده');return}
  act({action:'setCurrent',id:SEG[n].id},'الفقرة بتظهر دلوقتي ✅')}
-function togImg(){const h=HINTS[$('st').value];$('sib').style.display=h?'':'none';if(h){$('si').placeholder=h[0];$('sih').textContent=h[1]}}
+function togImg(){const t=$('st').value,h=HINTS[t];$('sib').style.display=h?'':'none';if(h){$('si').style.display=t==='gallery'?'none':'';$('si').placeholder=h[0];$('sih').textContent=h[1]}}
 function resetForm(){EDIT=0;$('si').value='';$('sti').value='';$('stx').value='';$('st').value='text';$('sb').textContent='إضافة الفقرة';$('fh').textContent='➕ إضافة فقرة';$('sc').style.display='none';togImg()}
 function editSeg(g){EDIT=g.id;$('st').value=g.type;$('si').value=g.img||'';togImg();$('sti').value=g.title;$('stx').value=g.text||'';
  $('sb').textContent='حفظ التعديل';$('fh').textContent='✏️ تعديل فقرة';$('sc').style.display='';$('sti').scrollIntoView({behavior:'smooth',block:'center'})}
@@ -102,7 +102,10 @@ function editSeg(g){EDIT=g.id;$('st').value=g.type;$('si').value=g.img||'';togIm
 function drawWinners(ws){
  const l=$('list');l.textContent='';
  ws.forEach(w=>{const r=document.createElement('div');r.className='w';
-  r.textContent='🏅 '+w.name+' – '+w.prize;
+  const t=document.createElement('span');t.textContent='🏅 '+w.name+' – '+w.prize+(w.photo?'  ✅ صورة':'');t.style.flex='1';r.append(t);
+  const ph=document.createElement('button');ph.className='sm';ph.textContent='📷';ph.title='صورة الفائز';
+  ph.onclick=async()=>{const v=prompt('صورة '+w.name+' (اسم ملف مرفوع جنب الموقع، أو رابط صورة / Google Drive). سيبها فاضية للمسح:',w.photo||'');if(v===null)return;await act({action:'setWinnerPhoto',id:w.id,photo:v},'تم حفظ الصورة ✅')};
+  r.append(ph);
   const x=document.createElement('button');x.className='x';x.textContent='حذف';
   x.onclick=async()=>{await call({action:'deleteWinner',id:w.id});refresh()};
   r.append(x);l.append(r)});
@@ -138,8 +141,8 @@ $('sb').onclick=async()=>{
 
 $('ab').onclick=async()=>{
  const n=$('an').value.trim();if(!n)return;
- const r=await call({action:'addWinner',name:n,prize:$('ap').value});
- if(r.ok){$('an').value='';msg('تم إظهار الفائز ✅',true);refresh()}else msg('فشل: '+r.error);
+ const r=await call({action:'addWinner',name:n,prize:$('ap').value,photo:$('aph').value});
+ if(r.ok){$('an').value='';$('aph').value='';msg('تم إظهار الفائز ✅',true);refresh()}else msg('فشل: '+r.error);
 };
 $('nx').onclick=async()=>{const r=await call({action:'nextWinner'});
  if(r.ok){msg('الشاشة بتعرض رسالة الفائز الجاي ✅',true);refresh()}else msg('فشل: '+r.error);
