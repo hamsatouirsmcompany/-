@@ -42,7 +42,7 @@ function doPost(e) {
       var text = String(b.text || '').trim().slice(0, 600);
       var type = String(b.type || 'text');
       var img = String(b.img || '').trim().slice(0, 600);
-      if (['text', 'draw', 'end', 'photo'].indexOf(type) < 0) type = 'text';
+      if (['text', 'draw', 'end', 'photo', 'video'].indexOf(type) < 0) type = 'text';
       if (!title) return out_({ ok: false, error: 'missing' });
       if (a === 'addSegment') {
         s.segSeq = (s.segSeq || 0) + 1;
@@ -93,6 +93,19 @@ function norm_(s) {
     var seg = { id: s.segSeq + 1, type: 'photo', title: 'صورة جماعية', text: 'الفائزون مع مجلس الإدارة', img: '' };
     if (at >= 0) s.segments.splice(at + 1, 0, seg); else s.segments.push(seg);
     s.segSeq = s.segSeq + 1; s.photoSeeded = true;
+  }
+  // إضافة فقرة "الفيديو" مرة واحدة بعد الصورة الجماعية (أو قبل الختام)
+  if (!s.videoSeeded) {
+    var pi = -1, ei = -1;
+    for (var k = 0; k < s.segments.length; k++) {
+      if (s.segments[k].type === 'photo') pi = k;
+      if (s.segments[k].type === 'end') ei = k;
+    }
+    var vseg = { id: s.segSeq + 1, type: 'video', title: 'فيديو تذكاري', text: '', img: '' };
+    if (pi >= 0) s.segments.splice(pi + 1, 0, vseg);
+    else if (ei >= 0) s.segments.splice(ei, 0, vseg);
+    else s.segments.push(vseg);
+    s.segSeq = s.segSeq + 1; s.videoSeeded = true;
   }
   return s;
 }

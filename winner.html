@@ -92,6 +92,13 @@ body.pic .sgn:empty{display:none}
 body.pic.hasn .sg img{max-height:42vh}
 .sgn span{background:#f9c61322;border:1.5px solid #f9c61399;border-radius:99px;padding:.25em .9em;color:#fff;font-weight:700;white-space:nowrap;animation:fi .8s both}
 .sgn small{color:var(--gold2);font-weight:600;margin-inline-start:.55em;font-size:.7em}
+.vf{display:none}
+body.vid .vf{display:block;width:min(90vw,calc(62vh*16/9));aspect-ratio:16/9;margin:2.4vh auto 0;border:3px solid var(--gold);border-radius:22px;overflow:hidden;background:#000;box-shadow:0 10px 50px #000a}
+.vf iframe,.vf video{width:100%;height:100%;border:0;display:block;background:#000}
+body.vid #seg{padding:13vh 3vw 6vh}
+body.vid .sg{max-width:min(94vw,1300px);padding:3vh 3vw}
+body.vid .sg h2{font-size:clamp(26px,min(4.6vw,7.5vh),70px)}
+body.vid .sg p{font-size:clamp(16px,min(2.6vw,4.2vh),38px);margin-top:2vh}
 @keyframes sgin{from{opacity:0;transform:scale(.9) translateY(4vh);filter:blur(10px)}}
 
 /* اللوجوهات: أعلى اليمين */
@@ -281,7 +288,7 @@ body.pic.hasn .sg img{max-height:42vh}
  <g stroke="#f4f6fb" stroke-width=".9"><path d="M-12 -11.2V-7.2M-3 -11.2V-7.2M6 -11.2V-7.2"/></g>
  <circle cx="-13" cy="-1.6" r="2.6" fill="#15161c"/><circle cx="-13" cy="-1.6" r="1" fill="#9aa1b3"/><circle cx="11" cy="-1.6" r="2.6" fill="#15161c"/><circle cx="11" cy="-1.6" r="1" fill="#9aa1b3"/></g><animateMotion dur="12s" begin="-6s" repeatCount="indefinite" path="M870 149H545" calcMode="linear"/></g>
 </svg></div>
-<div id="seg"><div class="sg" id="sg"><h2 id="sgt"></h2><div class="rl"><i></i></div><img id="sgi" alt=""><p id="sgx"></p><div class="sgn" id="sgn"></div></div></div>
+<div id="seg"><div class="sg" id="sg"><h2 id="sgt"></h2><div class="rl"><i></i></div><img id="sgi" alt=""><div class="vf" id="vf"></div><p id="sgx"></p><div class="sgn" id="sgn"></div></div></div>
 <div class="prev" id="prev"></div>
 
 <script>
@@ -312,16 +319,23 @@ function names(ws){const b=$('sgn'),a=ws.slice().reverse(),n=a.length;
  b.style.setProperty('--nf',(n<=6?3.3:n<=12?2.8:n<=20?2.3:n<=32?1.9:1.5)+'vh');
  a.forEach(w=>{const e=document.createElement('span');e.textContent='🏅 '+w.name;
   if(w.prize){const m=document.createElement('small');m.textContent=w.prize;e.append(m)}b.append(e)})}
+function videoEl(u){u=String(u||'').trim();if(!u)return null;let m,src='';
+ if(m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|live\/|shorts\/))([\w-]{11})/))src='https://www.youtube.com/embed/'+m[1]+'?autoplay=1&rel=0&playsinline=1';
+ else if(/facebook\.com|fb\.watch/.test(u))src='https://www.facebook.com/plugins/video.php?href='+encodeURIComponent(u)+'&show_text=false&autoplay=true';
+ else if(/drive\.google\.com/.test(u)&&(m=u.match(/\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/)))src='https://drive.google.com/file/d/'+m[1]+'/preview';
+ if(src){const f=document.createElement('iframe');f.src=src;f.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';f.allowFullscreen=true;return f}
+ const v=document.createElement('video');v.src=u;v.controls=true;v.autoplay=true;v.playsInline=true;return v}
 function modeOf(s){const g=s.segment;return !s.program?'draw':(!g?'pre':(g.type==='draw'?'draw':'text'))}
 function setMode(s){const m=modeOf(s),g=s.segment;
  const k=m==='text'?[g.id,g.type,g.title,g.text,g.img].join('|'):m;
  if(k===segKey)return m;
- segKey=k;mode=m;
+ segKey=k;mode=m;$('vf').textContent='';
  document.body.classList.toggle('txt',m==='text');
- if(m==='text'){document.body.classList.toggle('end',g.type==='end');document.body.classList.toggle('pic',g.type==='photo');
+ if(m==='text'){document.body.classList.toggle('end',g.type==='end');document.body.classList.toggle('pic',g.type==='photo');document.body.classList.toggle('vid',g.type==='video');
   const im=$('sgi');if(g.type==='photo'&&g.img){im.onerror=()=>{im.style.display='none'};im.style.display='';im.src=imgUrl(g.img)}else{im.removeAttribute('src');im.style.display='none'}
   $('sgn').dataset.k='';$('sgt').textContent=g.title;const x=$('sgx');x.textContent=g.text||'';x.style.display=g.text?'':'none';
   const c=$('sg');c.style.animation='none';void c.offsetWidth;c.style.animation='';
+  if(g.type==='video'){const v=videoEl(g.img);if(v)$('vf').append(v);else $('vf').style.display='none'}else $('vf').style.display='';
   if(g.type==='end'){confetti();chime()}else if(g.type==='photo'){confetti()}}
  else idle();
  return m}
