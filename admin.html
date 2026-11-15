@@ -40,7 +40,8 @@ button.sm{padding:5px 10px}button.big{width:100%;font-size:1.15rem;padding:14px}
 <div class="nav"><button id="pv">⏮ السابقة</button><button class="g" id="nxs">الفقرة التالية ⏭</button><button class="x" id="stp" style="padding:10px 12px">⏹ شاشة الانتظار</button></div>
 <div id="segs"></div>
 <h2 style="margin-top:16px" id="fh">➕ إضافة فقرة</h2>
-<div class="row"><select id="st"><option value="text">📝 نص (عنوان + نص)</option><option value="draw">🎰 قرعة (شاشة الفائزين)</option><option value="end">🏁 ختام (جملة + قصاصات)</option></select><input id="sti" placeholder="عنوان الفقرة (مثال: كلمة رئيس مجلس الإدارة)"></div>
+<div class="row"><select id="st"><option value="text">📝 نص (عنوان + نص)</option><option value="draw">🎰 قرعة (شاشة الفائزين)</option><option value="photo">📸 صورة (جماعية مع مجلس الإدارة)</option><option value="end">🏁 ختام (جملة + قصاصات)</option></select><input id="sti" placeholder="عنوان الفقرة (مثال: كلمة رئيس مجلس الإدارة)"></div>
+<div id="sib" style="display:none"><input id="si" dir="ltr" placeholder="اسم ملف الصورة (مثال: group.jpg) أو رابط صورة / رابط Google Drive" style="width:100%;box-sizing:border-box;margin-top:8px"><div class="hint" style="margin-top:6px">ارفع الصورة جنب ملفات الموقع واكتب اسمها هنا، أو حط رابط من Google Drive (المشاركة: أي شخص معاه الرابط). النص اللي تحت بيظهر كتعليق على الصورة.</div></div>
 <textarea id="stx" rows="3" placeholder="نص يظهر تحت العنوان (اختياري) — آية، جملة الختام، اسم المتحدث..."></textarea>
 <div class="row" style="margin-top:8px"><button class="g" id="sb">إضافة الفقرة</button><button id="sc" style="display:none;background:#8a96b8">إلغاء التعديل</button></div></div>
 
@@ -60,7 +61,7 @@ button.sm{padding:5px 10px}button.big{width:100%;font-size:1.15rem;padding:14px}
 const $=i=>document.getElementById(i);
 let PW=sessionStorage.getItem('pw')||'';
 let SEG=[],CUR=0,EDIT=0;
-const TYPES={text:'📝 نص',draw:'🎰 قرعة',end:'🏁 ختام'};
+const TYPES={text:'📝 نص',draw:'🎰 قرعة',photo:'📸 صورة',end:'🏁 ختام'};
 function msg(t,ok){$('msg').textContent=t;$('msg').style.color=ok?'#15803d':'#e11d48';}
 async function call(body){
  try{const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({password:PW},body))});
@@ -92,8 +93,9 @@ function step(d){
  const i=SEG.findIndex(g=>g.id===CUR);let n=i<0?(d>0?0:-1):i+d;
  if(n<0||n>=SEG.length){msg('مفيش فقرة '+(d>0?'بعد':'قبل')+' كده');return}
  act({action:'setCurrent',id:SEG[n].id},'الفقرة بتظهر دلوقتي ✅')}
-function resetForm(){EDIT=0;$('sti').value='';$('stx').value='';$('st').value='text';$('sb').textContent='إضافة الفقرة';$('fh').textContent='➕ إضافة فقرة';$('sc').style.display='none'}
-function editSeg(g){EDIT=g.id;$('st').value=g.type;$('sti').value=g.title;$('stx').value=g.text||'';
+function togImg(){$('sib').style.display=$('st').value==='photo'?'':'none'}
+function resetForm(){EDIT=0;$('si').value='';$('sti').value='';$('stx').value='';$('st').value='text';$('sb').textContent='إضافة الفقرة';$('fh').textContent='➕ إضافة فقرة';$('sc').style.display='none';togImg()}
+function editSeg(g){EDIT=g.id;$('st').value=g.type;$('si').value=g.img||'';togImg();$('sti').value=g.title;$('stx').value=g.text||'';
  $('sb').textContent='حفظ التعديل';$('fh').textContent='✏️ تعديل فقرة';$('sc').style.display='';$('sti').scrollIntoView({behavior:'smooth',block:'center'})}
 
 function drawWinners(ws){
@@ -125,9 +127,10 @@ $('pv').onclick=()=>step(-1);
 $('nxs').onclick=()=>step(1);
 $('stp').onclick=()=>act({action:'setCurrent',id:0},'الشاشة على وضع الانتظار ✅');
 $('sc').onclick=resetForm;
+$('st').onchange=togImg;
 $('sb').onclick=async()=>{
  const title=$('sti').value.trim();if(!title){msg('اكتب عنوان الفقرة');return}
- const body={action:EDIT?'updateSegment':'addSegment',id:EDIT,type:$('st').value,title:title,text:$('stx').value};
+ const body={action:EDIT?'updateSegment':'addSegment',id:EDIT,type:$('st').value,title:title,text:$('stx').value,img:$('si').value};
  const r=await act(body,EDIT?'تم حفظ التعديل ✅':'تمت إضافة الفقرة ✅');
  if(r.ok)resetForm();
 };

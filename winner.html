@@ -80,6 +80,18 @@ body.txt main,body.txt #prev{visibility:hidden}
 .sg .rl i{width:1.2vw;height:1.2vw;min-width:9px;min-height:9px;background:var(--gold);transform:rotate(45deg)}
 .sg p{margin:3vh 0 0;font-weight:700;font-size:clamp(18px,min(3.3vw,5.4vh),50px);line-height:1.9;color:#fff3c4;white-space:pre-line}
 body.end .sg p{font-family:'Reem Kufi',Cairo,sans-serif;color:var(--gold2)}
+.sg img{display:none}
+body.pic #seg{padding:13vh 3vw 6vh}
+body.pic .sg{max-width:min(94vw,1300px);padding:3vh 3vw}
+body.pic .sg h2{font-size:clamp(26px,min(4.6vw,7.5vh),70px)}
+body.pic .sg img{display:block;margin:2.4vh auto 0;max-width:100%;max-height:56vh;object-fit:contain;border-radius:26px;border:3px solid var(--gold);box-shadow:0 10px 50px #000a}
+body.pic .sg p{font-size:clamp(16px,min(2.6vw,4.2vh),38px);margin-top:2vh}
+.sgn{display:none}
+body.pic .sgn{display:flex;flex-wrap:wrap;justify-content:center;gap:.9vh 1vw;margin-top:2vh;font-size:var(--nf,2.6vh)}
+body.pic .sgn:empty{display:none}
+body.pic.hasn .sg img{max-height:42vh}
+.sgn span{background:#f9c61322;border:1.5px solid #f9c61399;border-radius:99px;padding:.25em .9em;color:#fff;font-weight:700;white-space:nowrap;animation:fi .8s both}
+.sgn small{color:var(--gold2);font-weight:600;margin-inline-start:.55em;font-size:.7em}
 @keyframes sgin{from{opacity:0;transform:scale(.9) translateY(4vh);filter:blur(10px)}}
 
 /* اللوجوهات: أعلى اليمين */
@@ -269,7 +281,7 @@ body.end .sg p{font-family:'Reem Kufi',Cairo,sans-serif;color:var(--gold2)}
  <g stroke="#f4f6fb" stroke-width=".9"><path d="M-12 -11.2V-7.2M-3 -11.2V-7.2M6 -11.2V-7.2"/></g>
  <circle cx="-13" cy="-1.6" r="2.6" fill="#15161c"/><circle cx="-13" cy="-1.6" r="1" fill="#9aa1b3"/><circle cx="11" cy="-1.6" r="2.6" fill="#15161c"/><circle cx="11" cy="-1.6" r="1" fill="#9aa1b3"/></g><animateMotion dur="12s" begin="-6s" repeatCount="indefinite" path="M870 149H545" calcMode="linear"/></g>
 </svg></div>
-<div id="seg"><div class="sg" id="sg"><h2 id="sgt"></h2><div class="rl"><i></i></div><p id="sgx"></p></div></div>
+<div id="seg"><div class="sg" id="sg"><h2 id="sgt"></h2><div class="rl"><i></i></div><img id="sgi" alt=""><p id="sgx"></p><div class="sgn" id="sgn"></div></div></div>
 <div class="prev" id="prev"></div>
 
 <script>
@@ -293,16 +305,24 @@ function show(w,animate){cur=w;isWait=false;
  if(animate){confetti();chime()}}
 function idle(){cur=null;isWait=false;$('wt').textContent='السحب هيبدأ بعد لحظات';$('wd').textContent='اسم الفائز هيظهر هنا أول ما يتم الإعلان عنه';$('arch').dataset.s='idle'}
 function setWait(){cur=null;isWait=true;$('wt').textContent='يا ترى مين الفائز الجاي؟ 🤔';$('wd').textContent='استنوا... الإعلان القادم بعد لحظات';$('arch').dataset.s='idle'}
+function imgUrl(u){u=String(u||'').trim();if(/drive\.google\.com|docs\.google\.com/.test(u)){const m=u.match(/\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/);if(m)return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w2400'}return u}
+function names(ws){const b=$('sgn'),a=ws.slice().reverse(),n=a.length;
+ const k=a.map(w=>w.id).join(',');if(b.dataset.k===k)return;b.dataset.k=k;
+ b.textContent='';document.body.classList.toggle('hasn',n>0);
+ b.style.setProperty('--nf',(n<=6?3.3:n<=12?2.8:n<=20?2.3:n<=32?1.9:1.5)+'vh');
+ a.forEach(w=>{const e=document.createElement('span');e.textContent='🏅 '+w.name;
+  if(w.prize){const m=document.createElement('small');m.textContent=w.prize;e.append(m)}b.append(e)})}
 function modeOf(s){const g=s.segment;return !s.program?'draw':(!g?'pre':(g.type==='draw'?'draw':'text'))}
 function setMode(s){const m=modeOf(s),g=s.segment;
- const k=m==='text'?[g.id,g.type,g.title,g.text].join('|'):m;
+ const k=m==='text'?[g.id,g.type,g.title,g.text,g.img].join('|'):m;
  if(k===segKey)return m;
  segKey=k;mode=m;
  document.body.classList.toggle('txt',m==='text');
- if(m==='text'){document.body.classList.toggle('end',g.type==='end');
-  $('sgt').textContent=g.title;const x=$('sgx');x.textContent=g.text||'';x.style.display=g.text?'':'none';
+ if(m==='text'){document.body.classList.toggle('end',g.type==='end');document.body.classList.toggle('pic',g.type==='photo');
+  const im=$('sgi');if(g.type==='photo'&&g.img){im.onerror=()=>{im.style.display='none'};im.style.display='';im.src=imgUrl(g.img)}else{im.removeAttribute('src');im.style.display='none'}
+  $('sgn').dataset.k='';$('sgt').textContent=g.title;const x=$('sgx');x.textContent=g.text||'';x.style.display=g.text?'':'none';
   const c=$('sg');c.style.animation='none';void c.offsetWidth;c.style.animation='';
-  if(g.type==='end'){confetti();chime()}}
+  if(g.type==='end'){confetti();chime()}else if(g.type==='photo'){confetti()}}
  else idle();
  return m}
 function prev(ws){const p=$('prev');p.textContent='';
@@ -320,6 +340,7 @@ async function poll(){try{
   if(!ws.length&&!busy&&!q.length&&!s.waiting)idle();
   process();
   if(s.waiting&&!busy&&!q.length&&!isWait)setWait()}
+ if(m==='text'&&s.segment.type==='photo')names(ws);
  prev(ws)}catch(e){console.error('poll failed',e)}}
 
 function confetti(){const c=$('cv'),g=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;

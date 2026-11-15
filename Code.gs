@@ -41,15 +41,16 @@ function doPost(e) {
       var title = String(b.title || '').trim().slice(0, 120);
       var text = String(b.text || '').trim().slice(0, 600);
       var type = String(b.type || 'text');
-      if (['text', 'draw', 'end'].indexOf(type) < 0) type = 'text';
+      var img = String(b.img || '').trim().slice(0, 600);
+      if (['text', 'draw', 'end', 'photo'].indexOf(type) < 0) type = 'text';
       if (!title) return out_({ ok: false, error: 'missing' });
       if (a === 'addSegment') {
         s.segSeq = (s.segSeq || 0) + 1;
-        s.segments.push({ id: s.segSeq, type: type, title: title, text: text });
+        s.segments.push({ id: s.segSeq, type: type, title: title, text: text, img: img });
       } else {
         var g = find_(s, id);
         if (!g) return out_({ ok: false, error: 'not_found' });
-        g.title = title; g.text = text; g.type = type;
+        g.title = title; g.text = text; g.type = type; g.img = img;
       }
     } else if (a === 'deleteSegment') {
       s.segments = s.segments.filter(function (g) { return g.id !== id; });
@@ -85,6 +86,14 @@ function norm_(s) {
     s.segSeq = 4; s.current = 0;
   }
   s.segSeq = s.segSeq || 0; s.current = s.current || 0;
+  // إضافة فقرة "الصورة الجماعية" مرة واحدة بعد فقرة القرعة (الـ id ثابت لحد ما يتحفظ)
+  if (!s.photoSeeded) {
+    var at = -1;
+    for (var i = 0; i < s.segments.length; i++) if (s.segments[i].type === 'draw') at = i;
+    var seg = { id: s.segSeq + 1, type: 'photo', title: 'صورة جماعية', text: 'الفائزون مع مجلس الإدارة', img: '' };
+    if (at >= 0) s.segments.splice(at + 1, 0, seg); else s.segments.push(seg);
+    s.segSeq = s.segSeq + 1; s.photoSeeded = true;
+  }
   return s;
 }
 function load_() {
@@ -105,7 +114,7 @@ function getState_() {
   return {
     stream: s.stream, winners: s.winners, waiting: s.waiting,
     program: s.segments.length > 0,
-    segment: g ? { id: g.id, type: g.type, title: g.title, text: g.text } : null
+    segment: g ? { id: g.id, type: g.type, title: g.title, text: g.text, img: g.img || '' } : null
   };
 }
 function out_(o) {
