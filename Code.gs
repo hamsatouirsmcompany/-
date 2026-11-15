@@ -15,6 +15,17 @@ function doPost(e) {
   if (!pass || String(b.password) !== pass) return out_({ ok: false, error: 'unauthorized' });
   if (b.action === 'check') return out_({ ok: true });
   if (b.action === 'list') return out_(Object.assign({ ok: true }, load_()));
+  if (b.action === 'uploadPhoto') {
+    try {
+      var data = String(b.data || '');
+      if (!data || data.length > 4000000) return out_({ ok: false, error: 'bad_image' });
+      var nm = String(b.name || 'winner').replace(/[^\w\u0600-\u06FF ]/g, '').slice(0, 40) || 'winner';
+      var blob = Utilities.newBlob(Utilities.base64Decode(data), 'image/jpeg', nm + '-' + Date.now() + '.jpg');
+      var f = photoFolder_().createFile(blob);
+      f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      return out_({ ok: true, url: 'https://drive.google.com/thumbnail?id=' + f.getId() + '&sz=w800' });
+    } catch (err) { return out_({ ok: false, error: 'upload_failed: ' + err.message }); }
+  }
 
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -76,6 +87,13 @@ function doPost(e) {
     return out_(Object.assign({ ok: true }, s));
   } finally { lock.releaseLock(); }
 }
+
+// صور الفائزين بتتخزن في فولدر على Drive. شغّل authorizeDrive مرة واحدة من المحرر لإعطاء الصلاحية.
+function photoFolder_() {
+  var it = DriveApp.getFoldersByName('Hamsa Lottery Photos');
+  return it.hasNext() ? it.next() : DriveApp.createFolder('Hamsa Lottery Photos');
+}
+function authorizeDrive() { photoFolder_(); }
 
 function idx_(s, id) { for (var i = 0; i < s.segments.length; i++) if (s.segments[i].id === id) return i; return -1; }
 function find_(s, id) { var i = idx_(s, id); return i < 0 ? null : s.segments[i]; }
