@@ -105,8 +105,8 @@ body.gal #seg{padding:13vh 3vw 5vh}
 body.gal .sg{width:min(96vw,1500px);max-width:none;padding:3vh 2.5vw}
 body.gal .sg h2{font-size:clamp(26px,min(4.6vw,7.5vh),70px)}
 body.gal .sg p{font-size:clamp(16px,min(2.4vw,3.8vh),34px);margin-top:1.4vh}
-.gc{display:flex;flex-direction:column;align-items:center;gap:.5vh;min-width:0;min-height:0;flex:none;width:var(--cw,200px);height:var(--ch,300px);animation:fi .8s both}
-.gp{flex:1;min-height:0;width:100%;border-radius:18px;border:3px solid var(--gold);overflow:hidden;background:#ffffff14;display:grid;place-items:center;font-size:2.2em;box-shadow:0 6px 24px #0009}
+.gc{display:flex;flex-direction:column;align-items:center;gap:.5vh;min-width:0;flex:none;width:var(--cw,200px);animation:fi .8s both}
+.gp{flex:none;height:var(--ph,250px);width:100%;border-radius:18px;border:3px solid var(--gold);overflow:hidden;background:#ffffff14;display:grid;place-items:center;font-size:2.2em;box-shadow:0 6px 24px #0009}
 .gp img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block}
 .gc b{max-width:100%;color:#fff;line-height:1.25;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gc small{font-size:.68em;color:var(--gold2);font-weight:600}
@@ -337,18 +337,20 @@ function videoEl(u){u=String(u||'').trim();if(!u)return null;let m,src='';
  if(src){const f=document.createElement('iframe');f.src=src;f.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';f.allowFullscreen=true;return f}
  const v=document.createElement('video');v.src=u;v.controls=true;v.autoplay=true;v.playsInline=true;return v}
 let LW=[];
+function applyPos(im,p){p=p||{x:50,y:22,z:1};im.style.objectPosition=p.x+'% '+p.y+'%';im.style.transformOrigin=p.x+'% '+p.y+'%';im.style.transform='scale('+p.z+')'}
 function gallery(ws){LW=ws;const b=$('gl'),a=ws.slice().reverse(),n=a.length;
- const k=a.map(w=>[w.id,w.name,w.prize,w.photo||''].join('~')).join('|');if(b.dataset.k===k)return;b.dataset.k=k;
+ const k=a.map(w=>[w.id,w.name,w.prize,w.photo||'',JSON.stringify(w.pos||'')].join('~')).join('|');if(b.dataset.k===k)return;b.dataset.k=k;
  b.textContent='';if(!n)return;
- const gw=b.clientWidth||innerWidth*.88,gh=b.clientHeight||innerHeight*.54,gx=innerWidth*.012,gy=innerHeight*.016;
- let c=1,best=1e9;
- for(let j=1;j<=n;j++){const rr=Math.ceil(n/j),cw=(gw-(j-1)*gx)/j,ch=(gh-(rr-1)*gy)/rr,e=Math.abs(Math.log((cw/ch)/.72));if(e<best){best=e;c=j}}
- const r=Math.ceil(n/c),ch=(gh-(r-1)*gy)/r,cw=Math.min((gw-(c-1)*gx)/c,ch*.8);
- b.style.setProperty('--cw',cw+'px');b.style.setProperty('--ch',ch+'px');
- b.style.setProperty('--nf',(r<=1?3.2:r<=2?2.7:r<=3?2.2:r<=4?1.8:1.5)+'vh');
+ const gw=(b.clientWidth||innerWidth*.88)-4,gh=b.clientHeight||innerHeight*.54,gx=innerWidth*.012,gy=innerHeight*.016,vh=innerHeight/100;
+ const nfOf=r=>(r<=1?3.2:r<=2?2.7:r<=3?2.2:r<=4?1.8:1.5);
+ let best={ph:0,c:1};
+ for(let j=1;j<=n;j++){const rr=Math.ceil(n/j),res=nfOf(rr)*vh*3.7+vh,cellW=(gw-(j-1)*gx)/j,rowH=(gh-(rr-1)*gy)/rr,ph=Math.min(rowH-res,cellW/.8);if(ph>best.ph+.5)best={ph:ph,c:j}}
+ const r=Math.ceil(n/best.c),ph=Math.max(40,best.ph);
+ b.style.setProperty('--ph',Math.floor(ph)+'px');b.style.setProperty('--cw',Math.floor(ph*.8)+'px');
+ const cw=Math.floor(ph*.8),c=Math.ceil(n/r);b.style.maxWidth=(c*cw+(c-1)*gx+3)+'px';b.style.marginInline='auto';b.style.setProperty('--nf',nfOf(r)+'vh');
  a.forEach(w=>{const d=document.createElement('div');d.className='gc';
   const p=document.createElement('div');p.className='gp';
-  if(w.photo){const im=document.createElement('img');im.alt='';im.onerror=()=>{im.remove();p.textContent='🏅'};im.src=imgUrl(w.photo);p.append(im)}else p.textContent='🏅';
+  if(w.photo){const im=document.createElement('img');im.alt='';im.onerror=()=>{im.remove();p.textContent='🏅'};applyPos(im,w.pos);im.src=imgUrl(w.photo);p.append(im)}else p.textContent='🏅';
   const nm=document.createElement('b');nm.textContent=w.name;d.append(p,nm);
   if(w.prize){const s2=document.createElement('small');s2.textContent=w.prize;d.append(s2)}
   b.append(d)})}

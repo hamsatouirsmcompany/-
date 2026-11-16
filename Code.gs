@@ -23,7 +23,7 @@ function doPost(e) {
       var blob = Utilities.newBlob(Utilities.base64Decode(data), 'image/jpeg', nm + '-' + Date.now() + '.jpg');
       var f = photoFolder_().createFile(blob);
       f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      return out_({ ok: true, url: 'https://drive.google.com/thumbnail?id=' + f.getId() + '&sz=w800' });
+      return out_({ ok: true, url: 'https://drive.google.com/thumbnail?id=' + f.getId() + '&sz=w1200' });
     } catch (err) { return out_({ ok: false, error: 'upload_failed: ' + err.message }); }
   }
 
@@ -38,14 +38,15 @@ function doPost(e) {
       if (!name || !prize) return out_({ ok: false, error: 'missing' });
       s.seq = (s.seq || 0) + 1;
       var photo = String(b.photo || '').trim().slice(0, 600);
-      s.winners.unshift({ id: s.seq, name: name, prize: prize, photo: photo, ts: Date.now() });
+      s.winners.unshift({ id: s.seq, name: name, prize: prize, photo: photo, pos: pos_(b.pos), ts: Date.now() });
       s.winners = s.winners.slice(0, 200);
       s.waiting = false;
     } else if (a === 'setWinnerPhoto') {
       var wi = null;
       for (var q = 0; q < s.winners.length; q++) if (s.winners[q].id === b.id) wi = s.winners[q];
       if (!wi) return out_({ ok: false, error: 'not_found' });
-      wi.photo = String(b.photo || '').trim().slice(0, 600);
+      if (b.photo !== undefined) wi.photo = String(b.photo || '').trim().slice(0, 600);
+      if (b.pos) wi.pos = pos_(b.pos);
     } else if (a === 'nextWinner') {
       s.waiting = true;
     } else if (a === 'deleteWinner') {
@@ -94,6 +95,13 @@ function photoFolder_() {
   return it.hasNext() ? it.next() : DriveApp.createFolder('Hamsa Lottery Photos');
 }
 function authorizeDrive() { photoFolder_(); }
+
+// مكان وتكبير الصورة جوه الكارت: x,y نسبة مئوية (0-100) و z تكبير (1-3)
+function pos_(p) {
+  if (!p || typeof p !== 'object') return null;
+  function c(v, a, b, d) { v = Number(v); return isFinite(v) ? Math.min(b, Math.max(a, v)) : d; }
+  return { x: c(p.x, 0, 100, 50), y: c(p.y, 0, 100, 22), z: c(p.z, 1, 3, 1) };
+}
 
 function idx_(s, id) { for (var i = 0; i < s.segments.length; i++) if (s.segments[i].id === id) return i; return -1; }
 function find_(s, id) { var i = idx_(s, id); return i < 0 ? null : s.segments[i]; }
