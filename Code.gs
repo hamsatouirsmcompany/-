@@ -15,6 +15,20 @@ function doPost(e) {
   if (!pass || String(b.password) !== pass) return out_({ ok: false, error: 'unauthorized' });
   if (b.action === 'check') return out_({ ok: true });
   if (b.action === 'list') return out_(Object.assign({ ok: true }, load_()));
+  if (b.action === 'driveToken') {
+    // رفع الفيديو بيتم من المتصفح مباشرة لـ Drive (علشان الملفات الكبيرة)
+    try { return out_({ ok: true, token: ScriptApp.getOAuthToken(), folder: videoFolder_().getId() }); }
+    catch (err) { return out_({ ok: false, error: 'upload_failed: ' + err.message }); }
+  }
+  if (b.action === 'shareFile') {
+    try {
+      var sf = DriveApp.getFileById(String(b.id || '')), ps = sf.getParents(), allowed = false;
+      while (ps.hasNext()) { var pn = ps.next().getName(); if (pn === 'Hamsa Lottery Videos' || pn === 'Hamsa Lottery Photos') allowed = true; }
+      if (!allowed) return out_({ ok: false, error: 'not_allowed' });
+      sf.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      return out_({ ok: true, url: 'https://drive.google.com/file/d/' + sf.getId() + '/view' });
+    } catch (err) { return out_({ ok: false, error: 'upload_failed: ' + err.message }); }
+  }
   if (b.action === 'uploadPhoto') {
     try {
       var data = String(b.data || '');
@@ -94,7 +108,11 @@ function photoFolder_() {
   var it = DriveApp.getFoldersByName('Hamsa Lottery Photos');
   return it.hasNext() ? it.next() : DriveApp.createFolder('Hamsa Lottery Photos');
 }
-function authorizeDrive() { photoFolder_(); }
+function videoFolder_() {
+  var it = DriveApp.getFoldersByName('Hamsa Lottery Videos');
+  return it.hasNext() ? it.next() : DriveApp.createFolder('Hamsa Lottery Videos');
+}
+function authorizeDrive() { photoFolder_(); videoFolder_(); }
 
 // مكان وتكبير الصورة جوه الكارت: x,y نسبة مئوية (0-100) و z تكبير (1-3)
 function pos_(p) {

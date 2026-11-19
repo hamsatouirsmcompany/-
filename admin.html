@@ -25,6 +25,7 @@ button.sm{padding:5px 10px}button.big{width:100%;font-size:1.15rem;padding:14px}
 .acts{display:flex;gap:6px;flex-wrap:wrap}.seg .x{margin-inline-start:0}
 .nav{display:flex;gap:8px;margin-bottom:10px}.nav button{flex:1}
 .hint{color:#4a5b86;font-size:.9rem;margin-bottom:8px}
+#sib{display:flex;flex-direction:column}#vup{order:-1;margin:8px 0 0}
 .pk{margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .pb{display:block;cursor:pointer;background:#eef3ff;border:2px dashed #24408e;color:#24408e;border-radius:12px;padding:12px 14px;font-weight:700;text-align:center}
 .pwrap{display:flex;gap:14px;align-items:center}
@@ -57,7 +58,9 @@ button.sm{padding:5px 10px}button.big{width:100%;font-size:1.15rem;padding:14px}
 <div id="segs"></div>
 <h2 style="margin-top:16px" id="fh">➕ إضافة فقرة</h2>
 <div class="row"><select id="st"><option value="text">📝 نص (عنوان + نص)</option><option value="draw">🎰 قرعة (شاشة الفائزين)</option><option value="photo">📸 صورة (جماعية مع مجلس الإدارة)</option><option value="video">🎬 فيديو</option><option value="gallery">🖼️ صور الفائزين (صور + أسماء)</option><option value="end">🏁 ختام (جملة + قصاصات)</option></select><input id="sti" placeholder="عنوان الفقرة (مثال: كلمة رئيس مجلس الإدارة)"></div>
-<div id="sib" style="display:none"><input id="si" dir="ltr" placeholder="اسم ملف الصورة (مثال: group.jpg) أو رابط صورة / رابط Google Drive" style="width:100%;box-sizing:border-box;margin-top:8px"><div class="hint" id="sih" style="margin-top:6px"></div></div>
+<div id="sib" style="display:none"><input id="si" dir="ltr" placeholder="اسم ملف الصورة (مثال: group.jpg) أو رابط صورة / رابط Google Drive" style="width:100%;box-sizing:border-box;margin-top:8px"><div class="hint" id="sih" style="margin-top:6px"></div>
+<div id="vup" style="display:none;margin-top:8px"><label class="pb" for="vf" style="display:block">📤 ارفع الفيديو من جهازك</label><input type="file" id="vf" accept="video/*" hidden>
+ <div id="vwrap" style="display:none;margin-top:8px"><progress id="vp" max="100" value="0" style="width:100%"></progress><div id="vst" class="hint"></div></div></div></div>
 <textarea id="stx" rows="3" placeholder="نص يظهر تحت العنوان (اختياري) — آية، جملة الختام، اسم المتحدث..."></textarea>
 <div class="row" style="margin-top:8px"><button class="g" id="sb">إضافة الفقرة</button><button id="sc" style="display:none;background:#8a96b8">إلغاء التعديل</button></div></div>
 
@@ -94,7 +97,7 @@ const $=i=>document.getElementById(i);
 let PW=sessionStorage.getItem('pw')||'';
 let SEG=[],CUR=0,EDIT=0;
 const TYPES={text:'📝 نص',draw:'🎰 قرعة',photo:'📸 صورة',video:'🎬 فيديو',gallery:'🖼️ صور الفائزين',end:'🏁 ختام'};
-const HINTS={gallery:['','بتعرض كل الفائزين بصورهم وأسمائهم. الصورة بتتحط لكل فائز من قايمة "🏆 الفائزون" تحت (زرار 📷) أو وقت إضافة الفائز. اللي من غير صورة بيظهر باسمه بس. النص اللي تحت بيظهر كتعليق.'],photo:['اسم ملف الصورة (مثال: group.jpg) أو رابط صورة / رابط Google Drive','ارفع الصورة جنب ملفات الموقع واكتب اسمها هنا، أو حط رابط من Google Drive (المشاركة: أي شخص معاه الرابط). النص اللي تحت بيظهر كتعليق.'],video:['رابط يوتيوب / فيسبوك / Google Drive، أو اسم ملف فيديو (مثال: clip.mp4)','يوتيوب وفيسبوك: الصق رابط الفيديو. Google Drive: المشاركة لأي شخص معاه الرابط. ملف مرفوع جنب الموقع: اكتب اسمه (mp4 أفضل). النص اللي تحت بيظهر كتعليق.']};
+const HINTS={gallery:['','بتعرض كل الفائزين بصورهم وأسمائهم. الصورة بتتحط لكل فائز من قايمة "🏆 الفائزون" تحت (زرار 📷) أو وقت إضافة الفائز. اللي من غير صورة بيظهر باسمه بس. النص اللي تحت بيظهر كتعليق.'],photo:['اسم ملف الصورة (مثال: group.jpg) أو رابط صورة / رابط Google Drive','ارفع الصورة جنب ملفات الموقع واكتب اسمها هنا، أو حط رابط من Google Drive (المشاركة: أي شخص معاه الرابط). النص اللي تحت بيظهر كتعليق.'],video:['أو الصق رابط يوتيوب / فيسبوك / Google Drive، أو اسم ملف فيديو (مثال: clip.mp4)','ارفع الفيديو من زرار الرفع فوق (بيترفع على Drive بتاعك)، أو الصق رابط يوتيوب/فيسبوك/Drive، أو اسم ملف مرفوع جنب الموقع. النص اللي تحت بيظهر كتعليق.']};
 function msg(t,ok){$('msg').textContent=t;$('msg').style.color=ok?'#15803d':'#e11d48';}
 async function call(body){
  try{const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(Object.assign({password:PW},body))});
@@ -126,7 +129,7 @@ function step(d){
  const i=SEG.findIndex(g=>g.id===CUR);let n=i<0?(d>0?0:-1):i+d;
  if(n<0||n>=SEG.length){msg('مفيش فقرة '+(d>0?'بعد':'قبل')+' كده');return}
  act({action:'setCurrent',id:SEG[n].id},'الفقرة بتظهر دلوقتي ✅')}
-function togImg(){const t=$('st').value,h=HINTS[t];$('sib').style.display=h?'':'none';if(h){$('si').style.display=t==='gallery'?'none':'';$('si').placeholder=h[0];$('sih').textContent=h[1]}}
+function togImg(){const t=$('st').value,h=HINTS[t];$('vup').style.display=t==='video'?'':'none';$('sib').style.display=h?'':'none';if(h){$('si').style.display=t==='gallery'?'none':'';$('si').placeholder=h[0];$('sih').textContent=h[1]}}
 function resetForm(){EDIT=0;$('si').value='';$('sti').value='';$('stx').value='';$('st').value='text';$('sb').textContent='إضافة الفقرة';$('fh').textContent='➕ إضافة فقرة';$('sc').style.display='none';togImg()}
 function editSeg(g){EDIT=g.id;$('st').value=g.type;$('si').value=g.img||'';togImg();$('sti').value=g.title;$('stx').value=g.text||'';
  $('sb').textContent='حفظ التعديل';$('fh').textContent='✏️ تعديل فقرة';$('sc').style.display='';$('sti').scrollIntoView({behavior:'smooth',block:'center'})}
@@ -203,6 +206,34 @@ $('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()});
 $('pv').onclick=()=>step(-1);
 $('nxs').onclick=()=>step(1);
 $('stp').onclick=()=>act({action:'setCurrent',id:0},'الشاشة على وضع الانتظار ✅');
+function fmtMB(b){return (b/1048576).toFixed(1)+' MB'}
+async function uploadVideo(file){
+ const bar=$('vp'),st=$('vst');$('vwrap').style.display='';bar.value=0;st.textContent='⏳ بيجهز الرفع...';
+ const t=await call({action:'driveToken'});if(!t.ok)throw new Error(upErr(t));
+ const mime=file.type||'video/mp4',ext=(file.name.match(/\.\w+$/)||['.mp4'])[0];
+ const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id',{method:'POST',
+  headers:{'Authorization':'Bearer '+t.token,'Content-Type':'application/json; charset=UTF-8','X-Upload-Content-Type':mime,'X-Upload-Content-Length':String(file.size)},
+  body:JSON.stringify({name:'video-'+Date.now()+ext,parents:[t.folder],mimeType:mime})});
+ if(!r.ok){const tx=(await r.text()).slice(0,200);
+  throw new Error(/SERVICE_DISABLED|has not been used|disabled/i.test(tx)?'لازم تفعّل Drive API: في محرر Apps Script اختار Services ← + ← Drive API ← Add، وبعدين انشر نسخة جديدة':'فشل بدء الرفع ('+r.status+'): '+tx)}
+ const loc=r.headers.get('Location');if(!loc)throw new Error('فشل بدء الرفع: مفيش رابط رفع');
+ const id=await new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open('PUT',loc);
+  x.upload.onprogress=e=>{if(e.lengthComputable){const p=Math.round(e.loaded/e.total*100);bar.value=p;st.textContent='⏳ جاري الرفع '+p+'% ('+fmtMB(e.loaded)+' من '+fmtMB(e.total)+') – سيب الصفحة مفتوحة'}};
+  x.onload=()=>{if(x.status>=200&&x.status<300){try{res(JSON.parse(x.responseText).id)}catch(e){rej(new Error('رد غير متوقع من Drive'))}}else rej(new Error('فشل الرفع ('+x.status+')'))};
+  x.onerror=()=>rej(new Error('انقطع الاتصال أثناء الرفع، جرّب تاني'));x.send(file)});
+ bar.value=100;st.textContent='⏳ بيتم تجهيز الرابط...';
+ const s=await call({action:'shareFile',id:id});if(!s.ok)throw new Error(upErr(s));
+ return s.url}
+$('vf').onchange=async()=>{const f=$('vf').files[0];if(!f)return;
+ $('vf').disabled=true;
+ try{const url=await uploadVideo(f);$('si').value=url;
+  const title=$('sti').value.trim();
+  if(EDIT&&title){const r=await call({action:'updateSegment',id:EDIT,type:'video',title:title,text:$('stx').value,img:url});
+   if(r.ok){$('vst').textContent='✅ تم رفع الفيديو وحفظه في الفقرة ('+fmtMB(f.size)+'). Drive بيحتاج دقايق يجهّزه، جرّب الفقرة قبل الحفل.';msg('تم رفع الفيديو وحفظه ✅',true);resetForm();refresh();return}}
+  $('vst').textContent='✅ تم رفع الفيديو ('+fmtMB(f.size)+'). دوس "'+$('sb').textContent+'" علشان يتحفظ في الفقرة. Drive بيحتاج دقايق يجهّزه، جرّب الفقرة قبل الحفل.';
+  msg('تم رفع الفيديو ✅ دوس حفظ الفقرة',true)
+ }catch(e){$('vst').textContent='❌ '+e.message;msg(e.message)}
+ finally{$('vf').disabled=false;$('vf').value=''}};
 $('sc').onclick=resetForm;
 $('st').onchange=togImg;
 $('sb').onclick=async()=>{
