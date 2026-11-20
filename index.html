@@ -88,6 +88,16 @@
 #hl-root .gr .cd{margin-top:0}
 #hl-root .gr .cw .cd{max-height:480px;overflow-y:auto}
 @media(max-width:860px){#hl-root .gr{grid-template-columns:1fr}#hl-root .gr .cw .cd{margin-top:16px;max-height:none}}
+#hl-root .bsg{display:none;text-align:center;margin:0 0 16px;padding:22px 20px;border-radius:20px;border:1px solid #f9c61377;background:linear-gradient(135deg,#f9c6132b,#ffffff0d);animation:hlfi .6s}
+#hl-root .bsg.on{display:block}
+#hl-root .bsg h2{margin:0;font-family:'Reem Kufi',Cairo,sans-serif;font-size:clamp(1.5rem,4.4vw,2.6rem);color:var(--gold2);line-height:1.35}
+#hl-root .bsg p{margin:10px 0 0;font-size:clamp(1rem,2.4vw,1.35rem);line-height:1.8;white-space:pre-line;color:#fff}
+#hl-root .bsg img.bi{display:block;margin:14px auto 0;max-width:100%;max-height:60vh;object-fit:contain;border-radius:18px;border:3px solid var(--gold);box-shadow:0 10px 40px #0008}
+#hl-root .bsg .bg2{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:14px}
+#hl-root .bsg .bg2 figure{margin:0;width:clamp(110px,22vw,190px)}
+#hl-root .bsg .bg2 img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px;border:2px solid var(--gold);display:block}
+#hl-root .bsg .bg2 figcaption{margin-top:6px;font-weight:900;font-size:.95rem}
+#hl-root .bsg.end h2{font-size:clamp(1.3rem,3.6vw,2.2rem)}
 /* ====== للصفحة المستقلة فقط (احذف السطرين دول لو هتلصق القطعة جوه offers.html) ====== */
 html,body{margin:0;background:#0b1a45}
 #hl-root{min-height:100vh}
@@ -103,6 +113,8 @@ html,body{margin:0;background:#0b1a45}
 </div>
 
 <div class="dua"><span>🤲 يارب ارزق كل مشتاق</span></div>
+
+<div class="bsg" id="hl-bseg"></div>
 
 <div class="gr"><div class="cs">
 <div class="frame"><div class="st" id="hl-st">
@@ -177,9 +189,22 @@ function next(){if(showing||!q.length)return;showing=true;const w=q.shift();
  $('ov').classList.remove('on');void $('ov').offsetWidth;$('ov').classList.add('on');confetti();beep();
  let tm;const done=()=>{if(!showing)return;$('ov').classList.remove('on');cancelAnimationFrame(raf);showing=false;clearTimeout(tm);setTimeout(next,400)};
  tm=setTimeout(done,12000);$('ov').onclick=done;}
+function imgUrl(u){u=String(u||'').trim();if(/drive\.google\.com|docs\.google\.com/.test(u)){const m=u.match(/\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/);if(m)return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1600'}return u}
+let bk='';
+function bseg(g,ws){const b=$('bseg');
+ const ph=(g&&(g.type==='gallery'||(g.type==='photo'&&!g.img)))?ws.filter(w=>w.photo).slice().reverse():[];
+ const k=g?[g.id,g.type,g.title,g.text,g.img,ph.map(w=>w.id+w.photo).join()].join('|'):'';
+ if(k===bk)return;bk=k;b.textContent='';
+ if(!g){b.className='bsg';return}
+ b.className='bsg on'+(g.type==='end'?' end':'');
+ const h=document.createElement('h2');h.textContent=g.title;b.append(h);
+ if(g.text){const p=document.createElement('p');p.textContent=g.text;b.append(p)}
+ if(g.type==='photo'&&g.img){const i=document.createElement('img');i.className='bi';i.alt=g.title;i.src=imgUrl(g.img);b.append(i)}
+ if(ph.length){const d=document.createElement('div');d.className='bg2';
+  ph.forEach(w=>{const f=document.createElement('figure'),i=document.createElement('img'),c=document.createElement('figcaption');i.src=imgUrl(w.photo);i.alt=w.name;i.loading='lazy';c.textContent=w.name;f.append(i,c);d.append(f)});b.append(d)}}
 async function poll(){try{
  const s=await (await fetch(API+'?t='+Date.now())).json();
- setStream(s.stream||'');render(s.winners||[]);
+ setStream(s.stream||'');render(s.winners||[]);bseg(s.bseg||null,s.winners||[]);
  if(authed&&document.activeElement!==$('au'))$('au').value=s.stream||'';
  const ids=new Set((s.winners||[]).map(w=>w.id));
  if(seen===null)seen=ids;

@@ -87,10 +87,19 @@ function doPost(e) {
     } else if (a === 'deleteSegment') {
       s.segments = s.segments.filter(function (g) { return g.id !== id; });
       if (s.current === id) s.current = 0;
+      if (s.bseg === id) s.bseg = 0;
     } else if (a === 'moveSegment') {
       var i = idx_(s, id), j = i + (Number(b.dir) < 0 ? -1 : 1);
       if (i < 0 || j < 0 || j >= s.segments.length) return out_({ ok: false, error: 'cannot_move' });
       var t = s.segments[i]; s.segments[i] = s.segments[j]; s.segments[j] = t;
+    } else if (a === 'setBroadcast') {
+      // فقرة تظهر على صفحة البث (مستقلة عن شاشة الفوز). الفيديو والقرعة مش بيتعرضوا هناك.
+      if (id) {
+        var bg = find_(s, id);
+        if (!bg) return out_({ ok: false, error: 'not_found' });
+        if (bg.type === 'video' || bg.type === 'draw') return out_({ ok: false, error: 'not_allowed' });
+      }
+      s.bseg = id || 0;
     } else if (a === 'setCurrent') {
       if (id && !find_(s, id)) return out_({ ok: false, error: 'not_found' });
       s.current = id || 0;
@@ -135,7 +144,7 @@ function norm_(s) {
     ];
     s.segSeq = 4; s.current = 0;
   }
-  s.segSeq = s.segSeq || 0; s.current = s.current || 0;
+  s.segSeq = s.segSeq || 0; s.current = s.current || 0; s.bseg = s.bseg || 0;
   // إضافة فقرة "الصورة الجماعية" مرة واحدة بعد فقرة القرعة (الـ id ثابت لحد ما يتحفظ)
   if (!s.photoSeeded) {
     var at = -1;
@@ -187,7 +196,9 @@ function getState_() {
   if (raw) s = norm_(JSON.parse(raw));
   else { s = load_(); CacheService.getScriptCache().put('DATA', JSON.stringify(s), 21600); }
   var g = s.current ? find_(s, s.current) : null;
+  var bgs = s.bseg ? find_(s, s.bseg) : null;
   return {
+    bseg: bgs ? { id: bgs.id, type: bgs.type, title: bgs.title, text: bgs.text, img: bgs.img || '' } : null,
     stream: s.stream, winners: s.winners, waiting: s.waiting,
     program: s.segments.length > 0,
     segment: g ? { id: g.id, type: g.type, title: g.title, text: g.text, img: g.img || '' } : null
