@@ -183,6 +183,9 @@ body.vid .sg{max-width:none;width:100%;height:100%;max-height:none;padding:0;bor
 body.vid .sg h2,body.vid .sg .rl,body.vid .sg p,body.vid .sg #sgi,body.vid .sgn,body.vid .gl{display:none!important}
 body.vid .vf{width:100vw;height:100vh;aspect-ratio:auto;margin:0;border:0;border-radius:0;box-shadow:none}
 body.vid .vf video,body.vid .vf iframe{width:100%;height:100%;object-fit:contain}
+body.vid .vf iframe{pointer-events:none}
+body.vid .vf iframe.crop{pointer-events:auto;height:calc(100% + 80px)}
+body.vid .vf video::-webkit-media-controls{display:none!important}
 body.vid .brand,body.vid .trip,body.vid .prev{display:none}
 body.vid .fs{display:none}
 body.vid,body.vid *{cursor:none!important}
@@ -441,7 +444,7 @@ function names(ws){const b=$('sgn'),a=ws.slice().reverse(),n=a.length;
  a.forEach(w=>{const e=document.createElement('span');e.textContent='🏅 '+w.name;
   if(w.prize){const m=document.createElement('small');m.textContent=w.prize;e.append(m)}b.append(e)})}
 function videoEl(u){u=String(u||'').trim();if(!u)return null;let m,src='';
- if(m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|live\/|shorts\/))([\w-]{11})/))src='https://www.youtube.com/embed/'+m[1]+'?autoplay=1&mute='+(unlocked?0:1)+'&rel=0&playsinline=1&controls=0&modestbranding=1&iv_load_policy=3';
+ if(m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|live\/|shorts\/))([\w-]{11})/))src='https://www.youtube.com/embed/'+m[1]+'?autoplay=1&mute='+(unlocked?0:1)+'&rel=0&playsinline=1&controls=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&fs=0';
  else if(/facebook\.com|fb\.watch/.test(u))src='https://www.facebook.com/plugins/video.php?href='+encodeURIComponent(u)+'&show_text=false&autoplay=true&width=1920';
  const dm=/drive\.google\.com/.test(u)&&(u.match(/\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/));
  function ifr(s2){const f=document.createElement('iframe');f.src=s2;f.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';f.allowFullscreen=true;return f}
@@ -449,10 +452,22 @@ function videoEl(u){u=String(u||'').trim();if(!u)return null;let m,src='';
  const v=document.createElement('video');
  v.src=dm?'https://drive.usercontent.google.com/download?id='+dm[1]+'&export=download&confirm=t':u;
  v.autoplay=true;v.playsInline=true;v.controls=false;v.preload='auto';
- if(dm)v.onerror=()=>{const p=v.parentNode;if(p){p.textContent='';p.append(ifr('https://drive.google.com/file/d/'+dm[1]+'/preview'))}};
+ if(dm){const alts=['https://drive.google.com/uc?export=download&confirm=t&id='+dm[1]];v.onerror=()=>{const a=alts.shift();if(a){v.src=a;v.load();go()}else{const p=v.parentNode;if(p){p.textContent='';const f=ifr('https://drive.google.com/file/d/'+dm[1]+'/preview');f.className='crop';p.append(f)}}}}
  const go=()=>{v.muted=false;const p=v.play();if(p&&p.catch)p.catch(()=>{v.muted=true;v.play().catch(()=>{})})};go();v.addEventListener('canplay',()=>{if(v.paused)go()},{once:true});
  const un=()=>{unlocked=true;v.muted=false};document.addEventListener('click',un,{once:true});document.addEventListener('keydown',un,{once:true});
  return v}
+var vcN=null;
+function vctl(cmd){const v=document.querySelector('#vf video');
+ if(v){const P=()=>{const p=v.play();if(p&&p.catch)p.catch(()=>{v.muted=true;v.play().catch(()=>{})})};
+  if(cmd==='play')P();else if(cmd==='pause')v.pause();else if(cmd==='restart'){v.currentTime=0;P()}
+  else if(cmd==='mute'){v.muted=true;v.dataset.m='1'}else if(cmd==='unmute'){v.muted=false;delete v.dataset.m;unlocked=true}
+  else if(cmd==='back10')v.currentTime=Math.max(0,v.currentTime-10);else if(cmd==='fwd10')v.currentTime=v.currentTime+10;return}
+ const f=document.querySelector('#vf iframe');if(!f||!f.contentWindow)return;
+ const m={play:'playVideo',pause:'pauseVideo',mute:'mute',unmute:'unMute',restart:'seekTo'}[cmd];if(!m)return;
+ f.contentWindow.postMessage(JSON.stringify({event:'command',func:m,args:cmd==='restart'?[0,true]:[]}),'*');
+ if(cmd==='restart')f.contentWindow.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}),'*')}
+function vcApply(s){const c=s.vc;if(!c)return;if(vcN===null){vcN=c.n;return}
+ if(c.n!==vcN){vcN=c.n;if(document.body.classList.contains('vid'))vctl(c.cmd)}}
 let LW=[];
 function applyPos(im,p){p=p||{x:50,y:22,z:1};im.style.objectPosition=p.x+'% '+p.y+'%';im.style.transformOrigin=p.x+'% '+p.y+'%';im.style.transform='scale('+p.z+')'}
 function gallery(ws){LW=ws;const b=$('gl'),a=ws.slice().reverse(),n=a.length;
@@ -501,7 +516,7 @@ async function poll(){try{
   process();
   if(s.waiting&&!busy&&!q.length&&!isWait)setWait()}
  if(m==='text'){const t=s.segment.type;if(t==='photo'&&s.segment.img)names(ws);else if(t==='gallery'||t==='photo')gallery(ws)}
- prev(ws)}catch(e){console.error('poll failed',e)}}
+ vcApply(s);prev(ws)}catch(e){console.error('poll failed',e)}}
 
 function confetti(){const c=$('cv'),g=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
  const cols=['#f9c613','#fff3b0','#ffffff','#e0a800','#8fb4ff'];
@@ -521,7 +536,23 @@ var unlocked=false;$('fs').onclick=()=>{unlocked=true;document.querySelectorAll(
 setTimeout(()=>$('fs').classList.add('hide'),6000);
 addEventListener('resize',()=>{fit();if(document.body.classList.contains('gal')){$('gl').dataset.k='';gallery(LW)}});
 if(matchMedia('(prefers-reduced-motion:reduce)').matches)$('trip').pauseAnimations();
-poll();setInterval(poll,3000);
+/* بوابة الصوت: لو المتصفح بيمنع الصوت التلقائي، نطلب ضغطة واحدة في البداية وبعدها كل الفيديوهات بصوت */
+(function(){
+ function open(){unlocked=true;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume()}catch(e){}
+  document.querySelectorAll('#vf video').forEach(v=>{v.muted=false;if(v.paused)v.play().catch(()=>{})});
+  const d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().catch(()=>{});
+  $('fs').classList.add('hide')}
+ let ok=false;try{const t=new (window.AudioContext||window.webkitAudioContext)();ok=t.state==='running';t.close()}catch(e){}
+ if(ok||(navigator.userActivation&&navigator.userActivation.hasBeenActive)){unlocked=true;return}
+ const g=document.createElement('div');
+ g.style.cssText='position:fixed;inset:0;z-index:999;background:#0b1a45;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font:700 clamp(22px,4vw,56px)/1.6 inherit;cursor:pointer;padding:5vw';
+ g.innerHTML='<div>اضغط في أي مكان لبدء العرض بالصوت 🔊<br><small style="font-weight:400;font-size:.5em;opacity:.8">ضغطة واحدة بس في البداية</small></div>';
+ const go=()=>{open();g.remove();removeEventListener('keydown',go,true)};
+ g.addEventListener('pointerdown',go);addEventListener('keydown',go,true);document.body.append(g);
+ /* أي ضغطة/تفاعل لاحق يفك الكتم تلقائي لو الفيديو اشتغل مكتوم */
+ setInterval(()=>{if(navigator.userActivation&&navigator.userActivation.hasBeenActive&&!unlocked)open()},500)})();
+setInterval(()=>{if(!unlocked)return;document.querySelectorAll('#vf video').forEach(v=>{if(v.muted&&!v.dataset.m)v.muted=false})},700);
+poll();setInterval(poll,3000);setInterval(()=>{if(document.body.classList.contains('vid'))poll()},1000);
 </script>
 <script>(function(){var e=document.getElementById('em');if(!e)return;for(var i=0;i<36;i++){var n=document.createElement('i'),r=Math.random;n.style.cssText='left:'+(r()*100).toFixed(1)+'%;--s:'+(5+r()*11).toFixed(0)+'px;--d:'+(6+r()*7).toFixed(1)+'s;--dl:-'+(r()*12).toFixed(1)+'s;--x:'+((r()-.5)*160).toFixed(0)+'px';e.appendChild(n)}})()</script>
 <script>(function(){var M=['عملائنا ومتابعينا الكرام، أهلاً وسهلاً بيكم في لقائنا المباشر من شركة همسة للسياحة ❤️','النهارده يوم مميز بنستناه معاكم، يوم مليان فرحة وأمل وتحقيق أمنيات، بنجتمع فيه علشان نعيش مع بعض لحظات جديدة من مبادرة التيسير.','خليكم معانا، وشاركوا البث مع أحبابكم، واستعدوا لمفاجآت ولحظات كلها فرحة بإذن الله.','لسه الحلم بيجمعنا.. ولسه الخير مستمر ❤️'],i=0,e=document.getElementById('hm');

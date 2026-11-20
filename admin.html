@@ -119,6 +119,9 @@ function drawSegs(){
   const box=document.createElement('span');box.className='acts';
   box.append(
    btn('▶ اعرض','sm g',()=>act({action:'setCurrent',id:g.id},'الفقرة بتظهر دلوقتي ✅'),g.id===CUR),
+   ...(g.type==='video'&&g.id===CUR?[
+    btn('⏯ تشغيل','sm',()=>vc('play')),btn('⏸ إيقاف','sm',()=>vc('pause')),btn('🔁 من الأول','sm',()=>vc('restart')),
+    btn('⏪10','sm',()=>vc('back10')),btn('10⏩','sm',()=>vc('fwd10')),btn('🔊','sm',()=>vc('unmute')),btn('🔇','sm',()=>vc('mute'))]:[]),
    ...((g.type==='video'||g.type==='draw')?[]:[g.id===BC
     ?btn('📡 إخفاء من البث','sm x',()=>act({action:'setBroadcast',id:0},'اتشالت من صفحة البث ✅'))
     :btn('📡 على البث','sm',()=>act({action:'setBroadcast',id:g.id},'الفقرة بتظهر على صفحة البث ✅'))]),
@@ -128,6 +131,7 @@ function drawSegs(){
    btn('حذف','sm x',()=>{if(confirm('حذف الفقرة "'+g.title+'"؟'))act({action:'deleteSegment',id:g.id})}));
   r.append(t,box);b.append(r)});
 }
+async function vc(cmd){const r=await call({action:'videoCtl',cmd:cmd});msg(r.ok?'اتبعت للفيديو ✅':(r.error==='unknown_action'?'انشر نسخة جديدة من Code.gs أولاً':'فشل: '+r.error),r.ok)}
 function step(d){
  const i=SEG.findIndex(g=>g.id===CUR);let n=i<0?(d>0?0:-1):i+d;
  if(n<0||n>=SEG.length){msg('مفيش فقرة '+(d>0?'بعد':'قبل')+' كده');return}
