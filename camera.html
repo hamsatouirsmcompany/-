@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>تصوير البث</title>
+<style>
+:root{--gold:#f9c613;--navy:#0b1a45;--navy2:#142c6b;--red:#e5484d;--green:#2fbf71}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--navy);color:#fff;font-family:Cairo,Tahoma,sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:16px;padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+h1{margin:6px 0 14px;color:var(--gold);font-size:22px;text-align:center}
+.card{background:var(--navy2);border-radius:14px;padding:14px;margin-bottom:12px}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #ffffff33;background:#0b1a45;color:#fff;font:inherit;font-size:16px}
+button{width:100%;padding:14px;border:0;border-radius:12px;font:inherit;font-size:18px;font-weight:700;cursor:pointer;color:var(--navy);background:var(--gold)}
+button.go{background:var(--green);color:#fff;font-size:22px;padding:18px}
+button.stop{background:var(--red);color:#fff;font-size:22px;padding:18px}
+button.sec{background:#ffffff1f;color:#fff;font-size:15px;padding:10px}
+button:disabled{opacity:.5}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.vid{position:relative;background:#000;border-radius:14px;overflow:hidden;aspect-ratio:16/9}
+video{width:100%;height:100%;object-fit:contain;background:#000}
+.live{position:absolute;top:10px;right:10px;background:var(--red);padding:3px 12px;border-radius:99px;font-weight:700;display:none}
+.live.on{display:block;animation:b 1.2s infinite}
+@keyframes b{50%{opacity:.5}}
+#msg{min-height:24px;text-align:center;margin:8px 0;font-size:15px}
+.ok{color:#7ff0b0}.er{color:#ff9a9d}
+label{display:block;margin:0 0 6px;font-size:14px;opacity:.85}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <h1>🎥 تصوير البث</h1>
+
+ <div class="card" id="login">
+  <label>كلمة سر الأدمن</label>
+  <input id="pw" type="password" autocomplete="current-password">
+  <div style="height:10px"></div>
+  <button id="lb">دخول</button>
+ </div>
+
+ <div id="panel" style="display:none">
+  <div class="vid"><video id="v" autoplay muted playsinline></video><div class="live" id="live">● مباشر</div></div>
+  <div style="height:12px"></div>
+  <div class="card">
+   <div class="row">
+    <div><label>الكاميرا</label><select id="cam"></select></div>
+    <div><label>الجودة</label><select id="q"><option value="720">720p (موصى به)</option><option value="480">480p (نت ضعيف)</option><option value="1080">1080p (نت قوي)</option></select></div>
+   </div>
+   <div style="height:10px"></div>
+   <div class="row"><button class="sec" id="flip">🔄 قلب الكاميرا</button><button class="sec" id="mic">🎤 الصوت: شغال</button></div>
+  </div>
+  <button class="go" id="go">▶ ابدأ البث</button>
+  <div id="msg"></div>
+  <div style="opacity:.7;font-size:13px;text-align:center;line-height:1.7">سيب الشاشة مفتوحة وماتقفلش التاب أثناء البث.<br>يفضل الموبايل على الشاحن ونت قوي (واي فاي أو 4G ثابت).</div>
+ </div>
+</div>
+
+<script>
+(function(){
+const API="https://script.google.com/macros/s/AKfycbySiSBI_xSOSVwBG1ZhY7FCXGeRFDsVa473c5x7yYR2grj3eiomZR-unXahVv0gZeeCNQ/exec";
+const $=id=>document.getElementById(id);
+let PW=sessionStorage.getItem('hlpw')||'',cfg=null,stream=null,pc=null,live=false,micOn=true,facing='environment',wake=null,resUrl=null,retry=0,stopping=false;
+
+function msg(t,ok){const m=$('msg');m.textContent=t||'';m.className=ok===undefined?'':(ok?'ok':'er')}
+async function call(b){
+ try{const r=await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({password:PW},b))});
+  const t=await r.text();try{return JSON.parse(t)}catch(e){return{ok:false,error:'رد غير مفهوم من السيرفر'}}}
+ catch(e){return{ok:false,error:'تعذر الاتصال: '+e.message}}}
+
+async function enter(){
+ const r=await call({action:'streamConfig'});
+ if(!r.ok){msg(r.error==='unauthorized'?'كلمة السر غلط':'فشل: '+r.error,false);$('login').style.display='block';return}
+ sessionStorage.setItem('hlpw',PW);cfg=r;
+ $('login').style.display='none';$('panel').style.display='block';
+ if(!cfg.whip){msg('لسه ماتضافش رابط البث (WHIP_URL) في إعدادات السكربت',false);$('go').disabled=true}
+ await startPreview();
+}
+$('lb').onclick=()=>{PW=$('pw').value;enter()};
+$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()});
+
+async function listCams(){
+ try{const d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='videoinput');
+  const cur=$('cam').value;$('cam').innerHTML='';
+  d.forEach((x,i)=>{const o=document.createElement('option');o.value=x.deviceId;o.textContent=x.label||('كاميرا '+(i+1));$('cam').append(o)});
+  if(cur)$('cam').value=cur;}catch(e){}}
+
+async function startPreview(){
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ const h=Number($('q').value)||720;
+ const vid={height:{ideal:h},width:{ideal:Math.round(h*16/9)},frameRate:{ideal:30,max:30}};
+ if($('cam').value)vid.deviceId={exact:$('cam').value};else vid.facingMode=facing;
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({video:vid,audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+ }catch(e){msg('تعذر فتح الكاميرا/المايك: اسمح بالصلاحيات من إعدادات المتصفح',false);return false}
+ stream.getAudioTracks().forEach(t=>t.enabled=micOn);
+ $('v').srcObject=stream;
+ await listCams();
+ const vt=stream.getVideoTracks()[0];if(vt&&vt.getSettings().deviceId)$('cam').value=vt.getSettings().deviceId;
+ if(live&&pc){ // تبديل الكاميرا أثناء البث بدون قطع
+  const s=pc.getSenders();
+  for(const sd of s){if(sd.track&&sd.track.kind==='video')await sd.replaceTrack(stream.getVideoTracks()[0]);if(sd.track&&sd.track.kind==='audio')await sd.replaceTrack(stream.getAudioTracks()[0])}
+ }
+ return true;
+}
+$('cam').onchange=startPreview;
+$('q').onchange=()=>{if(!live)startPreview();else msg('غيّر الجودة قبل بدء البث',false)};
+$('flip').onclick=()=>{facing=facing==='environment'?'user':'environment';$('cam').value='';startPreview()};
+$('mic').onclick=()=>{micOn=!micOn;if(stream)stream.getAudioTracks().forEach(t=>t.enabled=micOn);$('mic').textContent='🎤 الصوت: '+(micOn?'شغال':'مقفول')};
+
+function waitIce(p){return new Promise(res=>{if(p.iceGatheringState==='complete')return res();
+ const f=()=>{if(p.iceGatheringState==='complete'){p.removeEventListener('icegatheringstatechange',f);res()}};
+ p.addEventListener('icegatheringstatechange',f);setTimeout(res,4000)})}
+
+async function publish(){
+ pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'}],bundlePolicy:'max-bundle'});
+ const h=Number($('q').value)||720;
+ const kbps=h>=1080?4500:h>=720?2500:1200;
+ stream.getTracks().forEach(t=>{
+  const tr=pc.addTransceiver(t,{direction:'sendonly'});
+  if(t.kind==='video'){
+   try{const caps=RTCRtpSender.getCapabilities('video').codecs;
+    const h264=caps.filter(c=>/h264/i.test(c.mimeType));
+    if(h264.length&&tr.setCodecPreferences)tr.setCodecPreferences(h264.concat(caps.filter(c=>!/h264/i.test(c.mimeType))));}catch(e){}
+   try{const p=tr.sender.getParameters();if(!p.encodings||!p.encodings.length)p.encodings=[{}];p.encodings[0].maxBitrate=kbps*1000;tr.sender.setParameters(p)}catch(e){}
+  }
+ });
+ const offer=await pc.createOffer();await pc.setLocalDescription(offer);await waitIce(pc);
+ const r=await fetch(cfg.whip,{method:'POST',headers:{'Content-Type':'application/sdp'},body:pc.localDescription.sdp});
+ if(r.status!==201&&r.status!==200)throw new Error('رفض السيرفر ('+r.status+')');
+ resUrl=r.headers.get('Location');
+ await pc.setRemoteDescription({type:'answer',sdp:await r.text()});
+ pc.onconnectionstatechange=()=>{
+  if(stopping)return;
+  if(pc.connectionState==='connected'){retry=0;msg('البث شغال ✅',true)}
+  if(pc.connectionState==='failed'||pc.connectionState==='disconnected'){msg('الاتصال ضعيف... بحاول أرجّعه',false);setTimeout(reconnect,2500)}
+ };
+}
+async function reconnect(){
+ if(!live||stopping)return;
+ if(pc&&pc.connectionState==='connected')return;
+ if(retry++>20){msg('فشل الاتصال، اضغط إيقاف ثم ابدأ من جديد',false);return}
+ try{pc&&pc.close()}catch(e){}
+ try{await publish()}catch(e){setTimeout(reconnect,3000)}
+}
+
+async function lockScreen(){try{if('wakeLock' in navigator)wake=await navigator.wakeLock.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(live&&document.visibilityState==='visible')lockScreen()});
+
+$('go').onclick=async()=>{
+ if(!live){
+  if(!stream&&!(await startPreview()))return;
+  $('go').disabled=true;msg('جاري بدء البث...');stopping=false;
+  try{
+   await publish();live=true;lockScreen();
+   $('live').classList.add('on');$('go').textContent='⏹ إيقاف البث';$('go').className='stop';
+   if(cfg.play){ // يخلي صفحة المشاهدين تعرض البث تلقائيًا
+    const r=await call({action:'setStream',url:cfg.play});
+    if(!r.ok)msg('البث اشتغل لكن تعذر تحديث رابط الصفحة: '+r.error,false)}
+  }catch(e){msg('فشل بدء البث: '+e.message,false);try{pc&&pc.close()}catch(_){}}
+  $('go').disabled=false;
+ }else{
+  if(!confirm('إيقاف البث؟'))return;
+  stopping=true;live=false;
+  try{pc&&pc.close()}catch(e){}
+  try{if(resUrl)fetch(resUrl,{method:'DELETE'}).catch(()=>{})}catch(e){}
+  try{wake&&wake.release()}catch(e){}
+  $('live').classList.remove('on');$('go').textContent='▶ ابدأ البث';$('go').className='go';msg('البث اتوقف',true);
+ }
+};
+window.addEventListener('beforeunload',e=>{if(live){e.preventDefault();e.returnValue=''}});
+if(PW)enter();
+})();
+</script>
+</body>
+</html>

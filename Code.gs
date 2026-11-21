@@ -14,6 +14,11 @@ function doPost(e) {
   var pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
   if (!pass || String(b.password) !== pass) return out_({ ok: false, error: 'unauthorized' });
   if (b.action === 'check') return out_({ ok: true });
+  if (b.action === 'streamConfig') {
+    // إعدادات صفحة التصوير: Script Properties > WHIP_URL (إجباري) و PLAY_URL (اختياري)
+    var P = PropertiesService.getScriptProperties();
+    return out_({ ok: true, whip: P.getProperty('WHIP_URL') || '', play: P.getProperty('PLAY_URL') || '' });
+  }
   if (b.action === 'list') return out_(Object.assign({ ok: true }, load_()));
   if (b.action === 'driveToken') {
     // رفع الفيديو بيتم من المتصفح مباشرة لـ Drive (علشان الملفات الكبيرة)
