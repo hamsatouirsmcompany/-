@@ -151,7 +151,14 @@ $('ologo').src=document.querySelector('#hl-root .lg img').src;
 $('ologo2').src=document.querySelector('#hl-root .lg img.cr').src;
 let seen=null,q=[],showing=false,cur=null,raf,PW=sessionStorage.getItem('hlpw')||'',authed=false,last=[];
 
-function embed(u){try{const x=new URL(u),h=x.hostname.replace('www.','');let id=null;
+function cleanUrl(u){u=String(u||'').trim();
+ const m=u.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);if(m)u=m[1].replace(/&amp;/g,'&').trim();
+ try{const p=new URL(u.startsWith('//')?'https:'+u:u);
+  if(/facebook\.com$/.test(p.hostname.replace('www.',''))&&/\/plugins\/video\.php/.test(p.pathname)&&p.searchParams.get('href'))u=p.searchParams.get('href')}catch(e){}
+ if(/^\/\//.test(u))u='https:'+u;
+ else if(!/^https?:\/\//i.test(u)&&/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(u))u='https://'+u;
+ return u}
+function embed(u){u=cleanUrl(u);try{const x=new URL(u),h=x.hostname.replace('www.','');let id=null;
  if(h==='youtu.be')id=x.pathname.slice(1);
  else if(h.endsWith('youtube.com'))id=x.searchParams.get('v')||(x.pathname.match(/\/(live|embed|shorts)\/([^/?]+)/)||[])[2];
  if(id)return 'https://www.youtube.com/embed/'+id+'?autoplay=1&mute=1&rel=0';
