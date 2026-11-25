@@ -52,6 +52,11 @@ button.sm{padding:5px 10px}button.big{width:100%;font-size:1.15rem;padding:14px}
 <div class="row"><input id="pw" type="password" placeholder="كلمة سر الأدمن"><button id="lb">دخول</button></div></div>
 
 <div id="panel" style="display:none">
+<div class="card" id="hmc"><h2>🧒 همساوي (الحوار)</h2>
+<div class="hint">اضغط "التالي" كل ما أستاذ شهدي يخلّص كلامه. السطر الأصفر هو اللي جاي.</div>
+<div class="nav"><button class="g" id="hmn">▶ همساوي: التالي</button><button class="x" id="hms" style="padding:10px 12px">⏹ اسكت</button><button id="hmr" style="background:#8a96b8">↺ من الأول</button></div>
+<div id="hml"></div></div>
+
 
 <div class="card"><h2>🎬 فقرات الحفل (اللي بتظهر على صفحة الفائز)</h2>
 <div class="nav"><button id="pv">⏮ السابقة</button><button class="g" id="nxs">الفقرة التالية ⏭</button><button class="x" id="stp" style="padding:10px 12px">⏹ شاشة الانتظار</button></div>
@@ -92,6 +97,7 @@ button.sm{padding:5px 10px}button.big{width:100%;font-size:1.15rem;padding:14px}
  <div class="row" style="margin-top:10px"><button class="g" id="eds">حفظ</button><label class="pb2" for="edf">📷 اختيار صورة تانية</label><input type="file" id="edf" accept="image/*" hidden><button id="edc" style="background:#8a96b8">إلغاء</button></div>
 </div></div>
 <script src="config.js"></script>
+<script src="hamsawy.js"></script>
 <script>
 const $=i=>document.getElementById(i);
 let PW=sessionStorage.getItem('pw')||'';
@@ -272,6 +278,35 @@ $('nx').onclick=async()=>{const r=await call({action:'nextWinner'});
 $('an').addEventListener('keydown',e=>{if(e.key==='Enter')$('ab').click()});
 $('as').onclick=async()=>{const r=await call({action:'setStream',url:$('au').value});msg(r.ok?'تم حفظ البث ✅':'فشل: '+r.error,r.ok)};
 $('clr').onclick=async()=>{if(confirm('مسح كل الفائزين؟')){await call({action:'clearWinners'});refresh()}};
+(function(){
+const H=window.HAMSAWY,card=$('hmc');
+if(!H||!H.lines||!H.lines.length){card.style.display='none';return}
+const L=H.lines,SN=(H.settings&&H.settings.speakerName)||'المتحدث';
+let P=+(sessionStorage.getItem('hmp')||0);if(!(P>=0&&P<=L.length))P=0;
+const bc='BroadcastChannel' in window?new BroadcastChannel('hamsawy'):null;
+async function say(id){
+ if(bc)bc.postMessage({id:id});
+ const r=await call({action:'hamsawy',id:id});
+ msg(r.ok?(id==='stop'?'همساوي سكت ✅':'همساوي بيتكلم ✅'):(r.error==='unknown_action'?'انشر نسخة جديدة من Code.gs أولاً':'فشل: '+r.error),r.ok)}
+function nextH(from){for(let i=from;i<L.length;i++)if(L[i].who!=='s')return i;return -1}
+function setP(n){P=n;sessionStorage.setItem('hmp',P);draw()}
+function draw(){
+ const b=$('hml');b.textContent='';
+ L.forEach((l,i)=>{
+  const r=document.createElement('div');r.className='w seg'+(i===P?' on':'');if(i<P)r.style.opacity='.55';
+  const t=document.createElement('span');
+  t.textContent=(i+1)+'. '+(l.who==='s'?'🎤 '+SN:'🧒 همساوي')+': '+(l.label||'')+(l.text?' — '+l.text:'');
+  const box=document.createElement('span');box.className='acts';
+  if(l.who==='s')box.append(btn('📍 هنا','sm',()=>setP(i)));
+  else box.append(btn('▶ شغّل','sm g',()=>{say(l.id);setP(i+1)}));
+  r.append(t,box);b.append(r)});
+ const n=nextH(P);$('hmn').disabled=n<0;
+ $('hmn').textContent=n<0?'✔ الحوار خلص':'▶ همساوي: '+(L[n].label||L[n].id)}
+$('hmn').onclick=()=>{const n=nextH(P);if(n<0)return;say(L[n].id);setP(n+1)};
+$('hms').onclick=()=>say('stop');
+$('hmr').onclick=()=>setP(0);
+draw();
+})();
 if(PW)enter();
 </script>
 </body>

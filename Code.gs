@@ -105,6 +105,11 @@ function doPost(e) {
       var cmd = String(b.cmd || '');
       if (['play', 'pause', 'restart', 'mute', 'unmute', 'back10', 'fwd10'].indexOf(cmd) < 0) return out_({ ok: false, error: 'bad_cmd' });
       s.vc = { n: (s.vc && s.vc.n || 0) + 1, cmd: cmd };
+    } else if (a === 'hamsawy') {
+      // همساوي: id الجملة اللي تتشغّل، أو 'stop' لإسكاته. الرقم n بيزيد مع كل أمر علشان صفحة الفائز تعرف إن في أمر جديد
+      var hid = String(b.id || '').replace(/[^\w\-]/g, '').slice(0, 40);
+      if (!hid) return out_({ ok: false, error: 'missing' });
+      s.hm = { n: (s.hm && s.hm.n || 0) + 1, id: hid };
     } else if (a === 'setCurrent') {
       if (id && !find_(s, id)) return out_({ ok: false, error: 'not_found' });
       s.current = id || 0;
@@ -149,7 +154,7 @@ function norm_(s) {
     ];
     s.segSeq = 4; s.current = 0;
   }
-  s.segSeq = s.segSeq || 0; s.current = s.current || 0; s.bseg = s.bseg || 0; s.vc = s.vc || { n: 0, cmd: '' };
+  s.segSeq = s.segSeq || 0; s.current = s.current || 0; s.bseg = s.bseg || 0; s.vc = s.vc || { n: 0, cmd: '' }; s.hm = s.hm || { n: 0, id: '' };
   // إضافة فقرة "الصورة الجماعية" مرة واحدة بعد فقرة القرعة (الـ id ثابت لحد ما يتحفظ)
   if (!s.photoSeeded) {
     var at = -1;
@@ -204,7 +209,7 @@ function getState_() {
   var bgs = s.bseg ? find_(s, s.bseg) : null;
   return {
     bseg: bgs ? { id: bgs.id, type: bgs.type, title: bgs.title, text: bgs.text, img: bgs.img || '' } : null,
-    vc: s.vc, stream: s.stream, winners: s.winners, waiting: s.waiting,
+    vc: s.vc, hm: s.hm, stream: s.stream, winners: s.winners, waiting: s.waiting,
     program: s.segments.length > 0,
     segment: g ? { id: g.id, type: g.type, title: g.title, text: g.text, img: g.img || '' } : null
   };
